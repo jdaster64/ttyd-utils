@@ -85,6 +85,7 @@ def GetSymbolInfoFromDiffsCsv(filepath, region="U"):
             symbol_name = symbol_full_name
             symbol_file = ""
         # Calculate the absolute address based on the area / offset.
+        # TODO: These aren't technically fixed addresses (especially jon).
         address = offset
         if row["Area"] == "jon":
             address += 0x80c779a0
