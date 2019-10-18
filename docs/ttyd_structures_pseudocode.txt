@@ -1,0 +1,1403 @@
+Other resources:
+
+Shufflizer codebase - lists ALL UnitClassType & Item enum values; struct defs out of date:
+https://github.com/jdaster64/shufflizer
+
+Documentation on a lot of GSWF ids:
+https://docs.google.com/spreadsheets/d/1F44WcGXrV1rILFc1Qv1-KEt6ahi5dgNlR3p8QvJL-qE/edit#gid=0
+
+// Enumerations / bitfields...
+
+// All not listed are seemingly never used.
+enum AttackCounterResistance_Flags {
+    0x1 = Electric
+    0x2 = TopSpiky
+    0x4 = PreemptiveFrontSpiky
+    0x8 = FrontSpiky
+    0x10 = Fiery
+    0x20 = Icy
+    0x40 = Poison
+    0x80 = Explosive
+    0x100 = VolatileExplosive
+    0x200 = Payback  // includes Return Postage
+    0x400 = HoldFast
+}
+
+// All not listed are seemingly never used.
+enum AttackSpecialProperty_Flags {
+    0x1 = BadgeCanAffectPower
+    0x2 = StatusCanAffectPower (includes Merlee boost)
+    0x4 = IsChargeable
+    0x8 = CannotMiss (still fails if target PartsAttribute 0x4000 and !0x40000)
+    0x10 = DiminishingReturnsByHit (e.g. Power Bounce, Atomic Boo wind)
+    0x20 = DiminishingReturnsByTarget (e.g. Fire Drive)
+    0x40 = PiercesDefense
+    0x80 = CanBreakIce? (does nothing, since it's also required that rand(100) < 0)
+    0x100 = IgnoreTargetStatusVulnerability (unless it is 0)
+    0x200 = ? (only used by Gale Force)
+    0x400 = IgnitesIfBurned (turns attacks fire-elemental if attacker is burned)
+    0x1000 = FlipsShellEnemies
+    0x2000 = FlipsBombFlippableEnemies
+    0x4000 = GroundsWingedEnemies
+    0x10000 = CanUseItemIfConfused? (if unset on item, enemies can't use it if their token 0x10 is set)
+    0x20000 = Unguardable?
+}
+
+// All not listed are seemingly never used.
+enum AttackTargetClass_Flags {
+    0x1 = CannotTargetMarioOrShellShield
+    0x2 = CannotTargetPartner
+    0x10 = CannotTargetEnemy
+    0x20 = CannotTargetTreeOrSwitch
+    0x40 = CannotTargetSystemUnits (units 0xda ~ 0xdd, more specifically)
+    0x100 = CannotTargetOppositeAlliance
+    0x200 = CannotTargetOwnAlliance
+    0x1000 = CannotTargetSelf
+    0x2000 = OnlyTargetSelfOrSameSpecies
+    0x4000 = OnlyTargetSelf
+    0x10'0000 = OnlyTargetPreferredParts (must have parts attribute 0x1/0x2)
+    0x20'0000 = OnlyTargetSelectParts (must have parts attribute 0x1/0x2/0x4)
+    0x100'0000 = SingleTarget
+    0x200'0000 = MultipleTarget?
+}
+
+// All not listed are seemingly never used.
+enum AttackTargetProperty_Flags {
+    0x1 = Tattleable
+    0x2 = ? Used by "dummy no item" and Fuzzy Horde; similar to 0x8?
+    0x4 = CannotReachCeiling (used by jumps, Koops' attacks, etc.)
+    0x8 = Quakelike (used by Quake Hammer, Magnus' earthquake, etc.)
+    0x10 = TornadoJumplike (hits all but grounded)
+    0x1000 = Jumplike
+    0x2000 = Hammerlike (gulp, bomb, love slap, most grounded enemy attacks, etc.)
+    0x4000 = ShellTosslike (Koops' and mostly shell-like enemies' attacks)
+    0x8000 = ? Possibly unused, code indicates similar to 0x4000
+    0x10'0000 = RecoilDamage (prevents self on super/ultra hammer, gulp)
+    0x100'0000 = CanOnlyTargetFrontmost
+    0x200'0000 = ? (seemingly never used; referenced in code)
+    0x400'0000 = ? (seemingly never used; referenced in code)
+    0x1000'0000 = Seems to be set on attacks used only on self / allies
+    0x2000'0000 = Seems to be set on attacks without 0x1000'0000
+}
+
+// All not listed are seemingly never used.
+enum AttackTargetWeighting_Flags {
+    0x1 = PreferMario
+    0x2 = PreferPartner
+    0x4 = PreferFront
+    0x8 = PreferBack
+    0x10 = PreferSameAlliance
+    0x20 = PreferSameAllianceButNot2
+    0x100 = PreferLessHealthy
+    0x200 = GreatlyPreferLessHealthy
+    0x400 = PreferLowerHP
+    0x800 = PreferHigherHP
+    0x1000 = PreferInPeril
+    0x2000 = ? (Unknown; not referenced in BattleChoiceSamplingEnemy)
+    0x8000'0000 = ChooseWeightedRandomly (Else, just takes highest weight)
+}
+
+// "Attribute"; e.g. btlevtcmd_OnAttribute
+enum BattleUnitAttribute_Flags {
+    0x1 = ? (used by "tree" and "switch" actors)
+    0x2 = OutOfReach (generally on ceiling)
+    0x4 = Unquakeable (aerial / hovering)
+    0x8 = causes non-unmissable attacks to auto-miss?
+    0x10 = causes non-unmissable attacks to auto-miss?
+    0x20 = counters (unused?) AttackTargetProperty 0x200'0000?
+    0x1000, 0x2000 = ? (used by "tree", "switch", System actors)
+    0x20000 = inactive?
+    0x200'0000 = counters (unused?) AttackTargetProperty 0x400'0000?
+}
+
+// "Token"; e.g. btlevtcmd_OnToken
+enum BattleUnitToken_Flags {
+    0x8 = set if charge expended?
+    0x10 = set if confuse procs? swaps alliances used for target sampling if set
+    0x1000 = set in active move state?
+    0x2000 = set in "hustle" state (Rally Wink)?
+}
+
+// "PartsAttribute", e.g. btlevtcmd_CheckPartsAttribute
+enum PartsAttribute_Flags {
+    0x1 = MostPreferredSelectTarget
+    0x2 = PreferredSelectTarget
+    0x4 = SelectTarget
+    0x8 = ? Unknown
+    0x10 = ? causes AttackTargetClass 0x20'0000 to fail
+    0x40 = ? acts like always in front, causes miss after most other initial checks?
+    0x80 = WeakToAttackFxR
+    0x100 = WeakToIcePower
+    0x800 = IsWinged
+    0x1000 = IsShelled
+    0x2000 = IsBombFlippable
+    0x4000 = ? causes miss, unless 0x40000?; causes AttackTargetClass 0x10'0000/20'0000 to fail
+    0x10000 = NeverTargetable (i.e., cosmetic only, presumably)
+    0x40000 = ? causes 0x4000 to fail?
+    0x80000 = Untattleable (e.g. Cortez' bone pile, Blooper's arms, tutorial...)
+    0x10'0000 = JumplikeCannotTarget (seldom used; e.g. Magnus, Cortez phase 2)
+    0x20'0000 = HammerlikeCannotTarget
+    0x40'0000 = ShellTosslikeCannotTarget
+    0x80'0000 = ? Grodus' wand and tutorial actors have it
+    0x2000'0000 = IsImmuneToDamageOrStatus?
+    0x4000'0000 = IsImmuneToOHKO?
+    0x8000'0000 = IsImmuneToStatus?
+}
+
+// "PartsCounterAttribute", e.g. btlevtcmd_CheckPartsCounterAttribute
+// May be complete.
+enum PartsCounterAttribute_Flags {
+    0x1 = TopSpiky
+    0x2 = PreemptiveFrontSpiky
+    0x4 = FrontSpiky
+    0x10 = Fiery
+    0x20 = FieryStatus
+    0x40 = Icy
+    0x80 = IcyStatus
+    0x100 = Poison
+    0x200 = PoisonStatus
+    0x400 = Electric
+    0x800 = ElectricStatus
+    0x1000 = Explosive
+    0x2000 = VolatileExplosive
+}
+
+// Grubba / Jolene-esque battle conditions.
+enum BtlActRecCondition {
+    00: Succeeds automatically
+    01: Do not jump N times
+    02: Jump N times
+    03: Do not hammer N times
+    04: Hammer N times
+    05: Do not use special moves N times
+    06: Use special moves N times
+    07: Do not let Mario take N damage
+    08: Have Mario take N damage
+    09: Do not let partners take N damage
+    0a: Have partners take N damage
+    0b: Do not take N damage total
+    0c: Take N damage total
+    0d: Do not let Mario take N hits
+    0e: Have Mario take N hits
+    0f: Do not let partners take N hits
+    10: Have partners take N hits
+    11: Do not take N hits in total
+    12: Take N hits in total
+    13: Mario must win battle with at least N HP (fails if Mario dies)
+    14: Mario must win battle with less than N HP (fails if Mario dies)
+    15: Must get a Power Bounce combo of least N
+    16: Mario must use fewer than N items
+    17: Mario must use at least N items
+    18: Partners must use fewer than N items
+    19: Partners must use at least N items
+    1a: Use fewer than N items
+    1b: Use at least N items
+    1c: Mario must not swap partners N times
+    1d: Mario must swap partners N times
+    1e: Partners must not swap partners N times
+    1f: Partners must swap partners N times
+    20: Must not swap partners N times
+    21: Must swap partners N times
+    22: Mario must not attack audience N times
+    23: Mario must attack audience N times
+    24: Partners must not attack audience N times
+    25: Partners must attack audience N times
+    26: Mario must not appeal N times
+    27: Mario must appeal N times
+    28: Partners must not appeal N times
+    29: Partners must appeal N times
+    2a: Must not appeal N times
+    2b: Must appeal N times
+    2c: Mario must not spend N FP
+    2d: Mario must spend N FP
+    2e: Partners must not spend N FP
+    2f: Partners must spend N FP
+    30: Must not spend N FP
+    31: Must spend N FP
+    32: Mario must not use N moves (jump/hammer/SP + Charge/Defend/Dip actions)
+    33: Mario must use N moves
+    34: Partner must not use N moves (partner moves + Charge/Defend/Dip actions)
+    35: Partner must use N moves
+    36: Same as 0x30
+    37: Same as 0x31
+    38: Party must not use N moves
+    39: Party must use N moves
+    3a: Must take more than N turns
+    3b: Must not take more than N turns
+    3c: Wait N turns before Mario actions 
+        (jump/hammer/SP/item/switch/Charge/SuperCharge/Run)
+    3d: Wait N turns before Partner actions
+        (move/item/switch/Charge/SuperCharge/Run)
+    3e: Wait N turns before Party actions (0x3c + 0x3d conditions combined)
+    3f: Wait N turns before Mario attacks (jump/hammer/SP attack/item attack)
+    40: Wait N turns before partner attacks (partner attack/item attack)
+    41: Wait N turns before party attacks (0x3f + 0x40 conditions combined)
+    42: Mario can only jump or Defend
+    43: Mario can only hammer or Defend
+}
+
+enum ElementType {
+    0 = Normal
+    1 = Fire
+    2 = Ice
+    3 = Explosive
+    4 = Electric
+}
+
+enum ItemUseLocationFlags {
+    1 = Shop
+    2 = Battle
+    4 = Field
+}
+
+enum StatusEffectType {
+    0 = Allergic
+    1 = Sleep
+    2 = Stop
+    3 = Dizzy
+    4 = Poison
+    5 = Confuse
+    6 = Electric
+    7 = Dodgy
+    8 = Burn
+    9 = Freeze
+    10 = Huge
+    11 = Tiny
+    12 = AttackUp
+    13 = AttackDown
+    14 = DefenseUp
+    15 = DefenseDown
+    16 = Charge
+    17 = ???
+    18 = Invisible
+    19 = Fast
+    20 = Slow
+    21 = Payback
+    22 = HoldFast
+    23 = HPRegen
+    24 = FPRegen
+    25 = Fright
+    26 = GaleForce
+    27 = OHKO
+}
+
+// Static structures...
+
+struct AreaData {
+    .0x08 = BattleData* battle_database;
+} [size = variable] ("area_xxx mapdata.o" in sym map, size varies from 0x18 to 0x90)
+
+struct AttackParams {
+    .0x00 = const char* name_msg;
+    .0x04 = int16 icon;
+    .0x06 ~ .0x07 = int16 ? (unused?)
+    .0x08 = int32 item_id;
+    .0x10 = int8 base_accuracy;
+    .0x11 = int8 base_fp_cost;
+    .0x12 = int8 base_sp_cost;
+    .0x13 = int8 ? (generally 0, 1, or 2)  // if 0, cannot superguard
+    .0x14 = float ? (generally 1.0 or 0.0)
+    
+    // These have to do with rewards on hit; .0x18 in particular is Stylish-related
+    .0x18 = int8 stylish_command_multiplier;
+    .0x19 = ? (generally 5/1/0, 5 on player fp/sp attacks?)
+    .0x1a = int8 bingo_slot_inc_chance;
+    .0x1b = ? (generally 50/1/0, 50 on all player moves except non-Bobbery FS?)
+    
+    .0x1c = void* base_damage_fn;
+    .0x20 ~ .0x3f = int32[8] base_damage_params;
+    .0x40 = void* base_fp_damage_fn;
+    .0x44 ~ .0x63 = int32[8] base_fp_damage_params;
+    .0x64 = AttackTargetClass_Flags target_flags_hi;
+    .0x68 = AttackTargetProperty_Flags target_flags_lo;
+    .0x6c = ElementType(int8) element;
+    
+    // Special on/after-hit effects:
+    // 0x00 - None
+    // 0x05 - Knocked onto ground (used w/Gulp)
+    // 0x06 - Knocked into next target (used w/Gulp)
+    // 0x08 - Used for shell attacks, unknown use
+    // 0x0a - Squashed (e.g. Crump bomb)
+    // 0x0b - Squashed longer? (e.g. Dragon stomp)
+    // 0x0c - Squashed longer still (e.g. Magnus stomp)
+    // 0x0d - Inked
+    // 0x0e - Knocked backward (Super Hammer)
+    // 0x10 - Knocked backward (Ultra Hammer)
+    // 0x13 - Bigger particle effect? (used with "Ultra Hammer finisher"? too heavy to launch, maybe?)
+    // 0x14 - Confusion effect (used w/Kiss Thief)
+    // 0x15, 0x16 - Spin once (used w/Love Slap)
+    // 0x17, 0x18 - Quickly spin (used w/Love Slap)
+    // 0x19 - Blown away (like Gale Force); only happens if killed
+    // 0x1b - Used by a few miscellaneous attacks, unknown use
+    .0x6d = int8 after_hit_effect;
+    .0x6e = int8 weapon_ac_level;  // Base difficulty; Always 3 by default?
+    .0x6f = int8 ?  // Always 2, seemingly unused; perhaps was a "Nice"-esque default reward.
+    .0x70 = const char* ac_message;
+    .0x74 = AttackSpecialProperty_Flags special_property_flags;
+    .0x78 = AttackCounterResistance_Flags resistance_flags;
+    .0x7c = AttackTargetWeighting_Flags target_weighting_flags;
+    
+    .0x80 = int8 sleep_chance;
+    .0x81 = int8 sleep_time;
+    .0x82 = int8 stop_chance;
+    .0x83 = int8 stop_time;
+    .0x84 = int8 dizzy_chance;
+    .0x85 = int8 dizzy_time;
+    .0x86 = int8 poison_chance;
+    .0x87 = int8 poison_time;
+    .0x88 = int8 poison_strength;
+    .0x89 = int8 confuse_chance;
+    .0x8a = int8 confuse_time;
+    .0x8b = int8 electric_chance;
+    .0x8c = int8 electric_time;
+    .0x8d = int8 dodgy_chance;
+    .0x8e = int8 dodgy_time;
+    .0x8f = int8 burn_chance;
+    .0x90 = int8 burn_time;
+    .0x91 = int8 freeze_chance;
+    .0x92 = int8 freeze_time;
+    .0x93 = int8 size_change_change;
+    .0x94 = int8 size_change_time;
+    .0x95 = int8 size_change_strength;
+    .0x96 = int8 atk_change_chance;
+    .0x97 = int8 atk_change_time;
+    .0x98 = int8 atk_change_strength;
+    .0x99 = int8 def_change_chance;
+    .0x9a = int8 def_change_time;
+    .0x9b = int8 def_change_strength;
+    .0x9c = int8 allergic_chance;
+    .0x9d = int8 allergic_time;
+    .0x9e = int8 ohko_chance;
+    .0x9f = int8 charge_strength;
+    .0xa0 = int8 fast_chance;
+    .0xa1 = int8 fast_time;
+    .0xa2 = int8 slow_chance;
+    .0xa3 = int8 slow_time;
+    .0xa4 = int8 fright_chance;
+    .0xa5 = int8 gale_force_chance;
+    .0xa6 = int8 payback_time;
+    .0xa7 = int8 hold_fast_time;
+    .0xa8 = int8 invisible_chance;
+    .0xa9 = int8 invisible_time;
+    .0xaa = int8 hp_regen_time;
+    .0xab = int8 hp_regen_strength;
+    .0xac = int8 fp_regen_time;
+    .0xad = int8 fp_regen_strength;
+    .0xae ~ .0xaf = padding?
+    
+    .0xb0 = EventScript* attack_script;
+    .0xb4 = int8 bg_a1_a2_fall_weight;
+    .0xb5 = int8 bg_a1_fall_weight;
+    .0xb6 = int8 bg_a2_fall_weight;
+    .0xb7 = int8 bg_a_no_fall_weight;
+    .0xb8 = int8 bg_b_fall_chance;
+    .0xb9 = int8 nozzle_turn_chance;
+    .0xba = int8 nozzle_fire_chance;
+    .0xbb = int8 ceiling_fall_chance;
+    .0xbc = int8 object_fall_chance;
+    .0xbd = int8 ?  // unused stage hazard chance?
+    .0xbe ~ .0xbf = padding?
+} [size = 0xc0]
+
+struct AudienceWeights {
+    .0x00 = int8 min_weight;
+    .0x01 = int8 max_weight;
+} [size = 0x2]
+
+struct BattleData {
+    .0x00 = const char* battle_name;
+    .0x04 = const char* ???;  // occasional secondary name, usually a room code?
+    .0x08 = ??? (unused? always 0)
+    .0x0c = int32 flag_gswf_value;
+    .0x10 = WeightedLoadout* flag_enabled_loadouts;
+    .0x14 = WeightedLoadout* default_loadouts;
+    
+    // 0x1 ~ 0x8 = Unknown, all set on Ch. 1 Bald Cleft / Bristle / Cleft fights
+    // 0x10 = cannot flee
+    // 0x20 = if set, makes Merlee curses 45:45:10:0 for ATK:DEF:EXP:Coin 
+    //        instead of 30:30:20:20 (seemingly unused?)
+    // 0x40 = enforces Grubba / Jolene conditions?
+    // 0x10'0000 = Unknown; set on dragon battles + epilogue "battle"
+    // 0x1000'0000 = Unknown; set on Pit battles except Bonetail
+    // 0x2000'0000 = Unknown; generally set on boss-ish fights
+    .0x18 = ??? (flags?)
+    
+    // Determines audience composition on initialization...
+    // Usually 0, with the following exceptions:
+    // 2: Magnus von Grapple (X-Nauts and Punis only)
+    // 3: Red Bones in Hooktail's castle, Hooktail
+    // 5: Grodus (X-Nauts only)
+    // 6: Grubba, Doopliss[2], Cortez, Smorg, Magnus 2.0, Shadow Sirens (Ch.8), 
+    //    Gloomtail, Bowser (Ch. 8), Shadow Queen (both phases), epilogue battle
+    .0x1c = special_audience_modes;
+    
+    .0x20 = AudienceWeights toad;
+    .0x22 = AudienceWeights x_naut;
+    .0x24 = AudienceWeights boo;
+    .0x26 = AudienceWeights hammer_bro;
+    .0x28 = AudienceWeights dull_bones;
+    .0x2a = AudienceWeights shy_guy;
+    .0x2c = AudienceWeights dayzee;
+    .0x2e = AudienceWeights puni;
+    .0x30 = AudienceWeights koopa;
+    .0x32 = AudienceWeights bulky_bob_omb;
+    .0x34 = AudienceWeights goomba;
+    .0x36 = AudienceWeights piranha_plant;
+    .0x38 = AudienceWeights unknown_audience_1;  // seemingly unused
+    .0x3a = AudienceWeights unknown_audience_2;  // seemingly unused
+    .0x3c = AudienceWeights unknown_audience_3;  // seemingly unused
+    .0x3e = AudienceWeights unknown_audience_4;  // seemingly unused
+    .0x40 = const char* music_name;
+} [size = 0x44]
+
+struct BattlePartyData {
+    .0x00 = int32 num_enemies;
+    .0x04 = BattlePartySlotInfo* enemy_slot_data;
+    .0x08 = int32 held_item_weight;
+    .0x0c = int32 random_item_weight;
+    .0x10 = int32 no_item_weight;
+    .0x14 = PointDropData* hp_drop_table;  // pointer to PointDropData[5]
+    .0x18 = PointDropData* fp_drop_table;  // pointer to PointDropData[5]
+    .0x1c = ???
+} [size = 0x20]
+
+struct BattlePartySlotInfo ("EnemySlotData", "BattleUnitEntry") {
+    .0x00 = BattleUnitClassParams* unit_class_params;
+    .0x04 = int8 ally_status;
+    .0x05 ~ .0x07 = ?
+    .0x08 = int32 attack_phase;  // seemingly always 0x400'0004 for enemies
+    .0x0c = vector3 position;
+    .0x18 = uint32 ?
+    .0x1c ~ .0x1e = ?
+    .0x1f = bool ?  // related to different starting form; e.g. broom Magikoopas
+    .0x20 ~ .0x2b = ?
+    .0x2c ~ .0x2f = ItemDropData* item_drop_table;  // zero-terminated
+} [size = 0x30]
+
+struct BattleStageData ("BattlePropLoadoutData") {
+    .0x000 = const char* ???  // dir name w/ files for global stage data?
+    .0x004 = const char* ???  // dir name w/ files for current stage data?
+    .0x008 = int32 num_props;
+    .0x00c = BattleStageObjectData* props;
+    .0x010 = AttackParams background_a_weapon;
+    .0x0d0 = AttackParams background_b_weapon;
+    .0x190 = EventScript* init_evt;
+    // Falling bg events fall back to a standard one if not set.
+    .0x194 = EventScript* destroy_bg_a1_evt;
+    .0x198 = EventScript* destroy_bg_a2_evt;
+    .0x19c = EventScript* destroy_bg_b_evt;
+    .0x1a0 = ?
+    .0x1a4 = ?
+    .0x1a8 = EventScript*   ?  // scrolling bg? e.g. bgset_rsh_bg_event
+    .0x1ac = EventScript*   ?  // rotating bg? e.g. bgset_moo_space_event
+    .0x1b0 = uint8[4]       ?  // seem to be bools set for certain stages
+} [ size = 0x1b4 ]
+
+struct BattleStageObjectData ("PropSlotData") {
+    .0x00 = const char* prop_name;
+    .0x04 = int16 ???  // almost always 2; excepting Glitzville ceiling (has 5)
+    .0x06 = int16 layer;  // 0 = A1, 1 = A2, 2 = B, 3 = bg, 6 = ceiling
+    .0x08 = float x_pos;
+    .0x0c = float y_pos;
+    .0x10 = float z_pos;
+    .0x14 ~ .0x15 = int8[2] ?  // seem to always sum to 60
+    .0x16 ~ .0x17 = padding?
+} [size = 0x18]
+
+struct BattleUnitClassParams {
+    .0x00 = int32 unit_type;
+    .0x04 = const char* unit_name;
+    .0x08 = int16 max_hp;
+    .0x0a = int16 max_fp;
+    .0x0c = int8 danger_hp;
+    .0x0d = int8 peril_hp;
+    .0x0e = int8 level;
+    .0x0f = int8 bonus_exp;
+    .0x10 = int8 bonus_coin;
+    .0x11 = int8 bonus_coin_rate;
+    .0x12 = int8 base_coin;
+    .0x13 = int8 run_rate;
+    .0x14 = int16 pb_soft_cap;
+    .0x16 ~ .0x1d = int16[4] ?
+    .0x1e ~ .0x1f = padding?
+    .0x20 = vector3 ?
+    .0x2c = int16[2] ?
+    .0x30 = vector3 ???
+    .0x3c = vector3 ?
+    .0x48 ~ .0x5b = float[5] ???
+    .0x5c = vector3 ?
+    .0x68 = vector3 ?
+    .0x74 ~ .0x87 = float[5] ? ("CutBaseOffset", "CutWidth", "CutHeight"?)
+    .0x88 = int8 turn_order;  // only for "action" phase / attacks.
+    .0x89 = int8 turn_order_variance;
+    .0x8a = int8 swallow_param (always -1 or 0; I think this controls the ability to be shot)
+    .0x8b = int8 swallow_attribute (always 2 or 0; not sure what this does separate from the above)
+    .0x8c = int8 ultra_hammer_knock_chance (always 100 or 0)
+    .0x8d = int8 itemsteal_param (always 20 or 0)
+    .0x8e ~ .0x9b = ? (unused?)
+    .0x9c = damaged_sfx_name;
+    .0xa0 = const char* fire_damage_sfx_name;
+    .0xa4 = const char* ice_damage_sfx_name;
+    .0xa8 = const char* explosion_damage_sfx_name;
+    .0xac = BattleUnitAttribute_Flags default_attributes;
+    .0xb0 = StatusVulnerability default_status_vulnerability;
+    .0xb4 = int8 num_parts;
+    .0xb5 ~ .0xb7 = padding?
+    .0xb8 = BattleUnitParts* parts;  // non null-terminated
+    .0xbc = EventScript* init_script;
+    .0xc0 = // DataTable* data_table;
+} [size = 0xc4]
+
+struct BattleUnitParts {
+    .0x00 = int32 index;  // one-indexed
+    .0x04 = const char* name;
+    .0x08 = const char* model_name?
+    .0x0c = vector3 ?
+    .0x18 = vector3 ?
+    .0x24 = vector3 ?
+    .0x30 = int16 ?
+    .0x32 = int16 ?
+    .0x34 = int16 ? (always 255?)
+    .0x36 ~ .0x37 = padding?
+    .0x38 = BattleUnitDefense* default_defense;
+    .0x3c = BattleUnitDefenseAttr* default_defense_attr;
+    .0x40 = PartsAttribute_Flags default_status_flags;
+    .0x44 = PartsCounterAttribute_Flags default_property_flags;
+    .0x48 = // PoseTable* default_pose_table;
+} [size = 0x4c]
+
+struct ItemDropData {
+    .0x00 = int32 item_id;
+    .0x04 = int16 hold_weight;
+    .0x06 = int16 drop_weight;
+} [size = 0x8]
+
+struct ItemParams {
+    .0x00 = const char* id;
+    .0x04 = const char* name;
+    .0x08 = const char* description;
+    .0x0c = const char* menu_description;
+    .0x10 = ItemUseLocationFlags(int16) usable_locations;
+    .0x12 = int16 type_sort_order;
+    .0x14 = int16 buy_price;
+    .0x16 = int16 discount_price;
+    .0x18 = int16 star_piece_price;
+    .0x1a = int16 sell_price;
+    .0x1c = int8 bp_cost;
+    .0x1d = int8 hp_restored;
+    .0x1e = int8 fp_restored;
+    .0x1f = int8 padding?
+    .0x20 = int16 icon_id;  // Zephiles
+    .0x22 = int16 padding?
+    .0x24 = AttackParams* attack_params;
+} [size = 0x28]
+
+struct PointDropData {
+    .0x00 = int32 max_stat_percent;
+    .0x04 = int32 overall_drop_rate;
+    .0x08 = int32 drop_count;
+    .0x0c = int32 individual_drop_rate;
+} [size = 0x10]
+
+struct StatusVulnerability {
+    .0x00 = uint8 sleep;
+    .0x01 = uint8 stop;
+    .0x02 = uint8 dizzy;
+    .0x03 = uint8 poison;
+    .0x04 = uint8 confuse;
+    .0x05 = uint8 electric;
+    .0x06 = uint8 burn;
+    .0x07 = uint8 freeze;
+    .0x08 = uint8 huge;
+    .0x09 = uint8 tiny;
+    .0x0a = uint8 attack_up;
+    .0x0b = uint8 attack_down;
+    .0x0c = uint8 defense_up;
+    .0x0d = uint8 defense_down;
+    .0x0e = uint8 allergic;
+    .0x0f = uint8 fright;
+    .0x10 = uint8 gale_force;
+    .0x11 = uint8 fast;
+    .0x12 = uint8 slow;
+    .0x13 = uint8 dodgy;
+    .0x14 = uint8 invisible;
+    .0x15 = uint8 ohko;
+} [size = 0x16]
+
+struct WeightedLoadout {
+    .0x00 = int32 weight;
+    .0x04 = BattlePartyData* battle_data;
+    .0x08 = BattleStageData* battle_props;  // Isocitration
+} [size = 0xc]
+
+// Dynamic structures...
+
+struct BattleUnitBadgesEquipped {
+    .0x00 = close_call;
+    .0x01 = pretty_lucky;
+    .0x02 = lucky_day;
+    .0x03 = ? (seemingly unused, per _EquipItem)
+    .0x04 = power_plus;
+    .0x05 = p_up_d_down;
+    .0x06 = all_or_nothing;
+    .0x07 = mega_rush;
+    .0x08 = power_rush;
+    .0x09 = p_down_d_up;
+    .0x0a = double_pain;
+    .0x0b = last_stand;
+    .0x0c = defend_plus;
+    .0x0d = damage_dodge;
+    .0x0e = happy_heart;
+    .0x0f = happy_flower;
+    .0x10 = return_postage;
+    .0x11 = hp_plus;
+    .0x12 = fp_plus;
+    .0x13 = double_dip;
+    .0x14 = triple_dip;
+    .0x15 = flower_saver;
+    .0x16 = feeling_fine;
+    .0x17 = zap_tap;
+    .0x18 = pity_flower;
+    .0x19 = hp_drain;
+    .0x1a = fp_drain;
+    .0x1b = refund;
+    .0x1c = charge;
+    .0x1d = super_charge;
+    .0x1e = unused_defend_command_badge;
+    .0x1f = jumpman;
+    .0x20 = hammerman;
+    .0x21 = ice_power;
+    .0x22 = spike_shield;
+    .0x23 = super_appeal;
+    .0x24 = lucky_start;
+    .0x25 = simplifier;
+    .0x26 = unsimplifier;
+    .0x27 = auto_command_badge;
+} [size = 0x28]
+
+struct BattleUnitPartsWork {
+    .0x000 = BattleUnitPartsWork* next_part;
+    .0x004 = BattleUnitParts* class_part;
+    
+    .0x024 = vector3 ?  // assigned from parts.0x0c
+    
+    .0x03c = vector3 PartsBaseRotate;
+    .0x048 = vector3 PartsRotate;
+    .0x054 = vector3 PartsRotateOffset;
+    .0x060 = vector3 PartsScale;
+    .0x06c = vector3 PartsBaseScale;
+    
+    .0x0bd = int8 ?  // something position-related?
+    
+    .0x170 = vector3 ?  // assigned from parts.0x18
+    .0x17c = vector3 ?  // unknown
+    .0x188 = vector3 ?  // assigned from parts.0x24
+    .0x194 = vector3 ?  // unknown
+    .0x1a0 = int16 ?
+    .0x1a2 = int16 ?  // assigned from parts.0x30
+    .0x1a4 = int16 ?  // assigned from parts.0x32
+    
+    .0x1ac = PartsAttribute_Flags status_flags;
+    .0x1b0 = PartsCounterAttribute_Flags property_flags;
+    .0x1b4 = BattleUnitDefense* defense;
+    .0x1b8 = BattleUnitDefenseAttr* defense_attr;
+    .0x1bc = // PoseTable* pose_table;
+    
+    .0x2d4 = BattleUnitParts* // class_part.index if status_flags & 1
+    
+    .0x4ec = BattleUnitWork* battle_unit_owner;
+} [ size = 0x500 ]
+
+struct BattleUnitWork {
+    .0x000 = int32 unit_id;
+    .0x004 = ? (also class_type?)
+    .0x008 = int32 class_type;
+    .0x00c = int8 alliance;
+    .0x00d = int8 level;
+    .0x010 = BattleUnitClassParams* class_params;
+    .0x014 = BattleUnitPartsWork* parts;
+    .0x018 = void* data_table;
+    .0x01c = uint32 unit_flags? // btlevtcmd_OffUnitFlag, etc.
+    .0x020 = int8 move_state?
+    .0x021 = int8 max_move_count;
+    .0x022 = int8 moves_remaining;
+    .0x023 = int8 ? // also moves remaining?
+    .0x024 = int8 active_turns?     // Used to make Slow status skip turns
+    .0x025 = int8 swallow_param;    // assigned from class_params.0x8a
+    .0x026 = int8 swallow_attribute // assigned from class_params.0x8b;
+    // set to class_params.0x88 +/- 0.5 * rand(class_params.0x89) at the
+    // beginning of each turn; used for battleSortPhaseMoveTable
+    .0x028 = int32 move_priority;
+    .0x02c = int32 attack_phase;  // initially copied from BattlePartySlotInfo.0x08
+    .0x030 = vector3 HomePos;
+    .0x03c = vector3 Pos;
+    .0x048 = vector3 OffsetPos;
+    
+    .0x060 = vector3 BaseRotate;
+    .0x06c = vector3 Rotate;
+    .0x078 = vector3 RotateOffset;
+    
+    .0x084 = vector3?  // assigned from class_params.0x20; center offset?
+    
+    .0x090 = vector3 Scale;
+    .0x09c = vector3 BaseScale;
+    
+    .0x0b4 = vector3?  // assigned from class_params.0x3c
+    .0x0c0 = vector3 possession_item_offset;
+    .0x0cc ~ .0x0d3 = int16[4]?  // assigned from class_params.0x16
+    .0x0d4 ~ .0x0d7 = int16[2]?  // assigned from class_params.0x2c
+    .0x0d8 ~ .0x0eb = float[5]?  // assigned from class_params.0x74; cut base offset?
+    .0x0ec = vector3?  // assigned from class_params.0x5c; "binta" hit offset?
+    .0x0f8 = vector3?  // assigned from class_params.0x68; kiss hit offset?
+    
+    .0x104 = BattleUnitAttribute_Flags 0x104_flags;
+    .0x108 = int16 max_hp;
+    .0x10a = int16 base_max_hp;  // no badges
+    .0x10c = int16 current_hp;
+    .0x10e = int16 max_fp;
+    .0x110 = int16 base_max_fp;  // no badges
+    .0x112 = int16 current_fp;
+    .0x114 = float scale;
+    .0x118 = int8 sleep_turns;
+    .0x119 = int8 ? something regarding waking up from sleep?
+    .0x11a = int8 stop_turns;
+    .0x11b = int8 dizzy_turns;
+    .0x11c = int8 poison_turns;
+    .0x11d = int8 poison_strength;
+    .0x11e = int8 confusion_turns;
+    .0x11f = int8 electric_turns;
+    .0x120 = int8 dodgy_turns;
+    .0x121 = int8 burn_turns;
+    .0x122 = int8 freeze_turns;
+    .0x123 = int8 size_change_turns;
+    .0x124 = int8 size_change_strength;
+    .0x125 = int8 attack_change_turns;
+    .0x126 = int8 attack_change_strength;
+    .0x127 = int8 int8 defense_change_turns;
+    .0x128 = int8 defense_change_strength;
+    .0x129 = int8 charge_strength;
+    .0x12a = int8 allergic_turns;
+    // If nonzero, player characters don't get the battle menu options?
+    .0x12b = int8 status_17_strength?
+    .0x12c = int8 invisible_turns;
+    .0x12d = int8 payback_turns;
+    .0x12e = int8 hold_fast_turns;
+    .0x12f = int8 fast_turns;
+    .0x130 = int8 slow_turns;
+    .0x131 = int8 hp_regen_turns;
+    .0x132 = int8 hp_regen_strength;
+    .0x133 = int8 fp_regen_turns;
+    .0x134 = int8 fp_regen_strength;
+    .0x135 = int8 ohko_strength?
+    
+    // 0x1 = CanAct
+    // 0x1000'0000 = InDanger
+    // 0x2000'0000 = InPeril
+    .0x138 = uint32 status_flags;
+    
+    .0x144 = StatusVulnerability* status_vulnerability;
+    
+    .0x189 = int8 face_direction;
+    
+    .0x1fc ~ .0x20f = ? "HpGauge"-related
+    
+    .0x218 ~ .0x227 = // assigned from BattlePartySlotInfo 0x1c ~ 0x2b
+    
+    .0x258 = currently_targeted_parts?
+    
+    .0x278 = uint32? damage_code;
+    .0x27c = BattleUnitTokens 0x27c_flags;
+    
+    .0x28c = EventScript* wait_script;
+    .0x290 = int32 currently_executing_wait_script_id?
+    .0x294 = EventScript* unison_phase_script;
+    .0x298 = EventScript* phase_script;
+    .0x29c = int32 currently_executing_phase_script_id?
+    .0x2a0 = EventScript* attack_script;
+    .0x2a4 = EventScript* confuse_script;
+    .0x2a8 = int32 currently_executing_attack_script_id?
+    .0x2ac = uint32  // battle menu state?
+    .0x2b0 = EventScript* damage_script;
+    .0x2b4 = int32 currently_executing_damage_script_id?
+    
+    .0x2c8 = EventScript* unknown_script;
+    .0x2cc = int32 currently_executing_unknown_script_id?
+    
+    .0x2d8 = const char* // something to do with GetPoseNameFromType(..., 0x41)
+    .0x2dc = const char* // something to do with GetPoseNameFromType(..., 0x2b)
+    .0x2e0 = BattleUnitBadgesEquipped badges_equipped;
+    .0x308 = int32 held_item;
+    
+    .0x348 ~ .0xae7 = ? "BattleStatusIcon"-related
+    .0xae8 ~ .0xb2f = ? "BattleStatusChangeInfoWork"-related
+} [ size = 0xb34 ]
+
+struct PouchWork {
+    .0x000 = PouchPartyWork party_data[8];
+    .0x070 = int16 current_hp;
+    .0x072 = int16 max_hp;
+    .0x074 = int16 current_fp;
+    .0x076 = int16 max_fp;
+    .0x078 = int16 coins;
+    .0x07a = int16 current_sp;
+    .0x07c = int16 max_sp;
+    .0x07e ~ .0x083 = UNKNOWN, maybe unused
+    .0x084 = float last_audience_level;
+    .0x088 = int16 rank;
+    .0x08a = int16 level;
+    .0x08c = uint16 star_powers_obtained;
+    .0x08e = int16 base_max_hp;
+    .0x090 = int16 base_max_fp;
+    .0x092 = int16 unallocated_bp;
+    .0x094 = int16 total_bp;
+    .0x096 = int16 star_points;
+    .0x098 = int8 jump_level;
+    .0x099 = int8 hammer_level;
+    .0x09a = int16 star_pieces;
+    .0x09c = int16 shine_sprites;
+    .0x09e = int16 power_bounce_record;
+    .0x0a0 = int16 key_items[121];
+    .0x192 = int16 items[20];
+    .0x1ba = int16 stored_items[32];
+    .0x1fa = int16 badges[200];
+    .0x38a = int16 equipped_badges[200];
+    .0x51a = int8 e_mail_ids[100];          // Assuming this is extra space.
+    .0x57e ~ .0x57f = padding?
+    .0x580 = uint32 e_mail_received[4];     // Bitfields; assuming extra space.
+    .0x590 = uint32 e_mail_read[4];         // Bitfields; assuming extra space.
+    .0x5a0 ~ .0x5b7 = UNKNOWN, maybe unused
+    .0x5b8 = int8 merlee_curse_uses_remaining;
+    .0x5b9 = int8 turns_until_merlee_activation;
+    .0x5ba = int8 next_merlee_curse_type;
+    .0x5bb = int8 super_bowser_coins;       // KpaCoin?
+    .0x5bc = int32 super_bowser_score;      // KpaScore?
+    .0x5c0 = char yoshi_name[16];
+    .0x5d0 ~ .0x5d3 = UNKNOWN, maybe unused
+} [size = 0x5d4]
+
+struct PouchPartyWork {
+    .0x00 = uint16 flags;
+    .0x02 = int16 max_hp;
+    .0x04 = int16 base_max_hp;
+    .0x06 = int16 current_hp;
+    .0x08 = int16 party_attack_level;  // "PartyAttackLv"?
+    .0x0a = int16 attack_level;
+    .0x0c = int16 tech_level;
+} [size = 0xe]
+
+// r13 + 0x19a0 = pointer to NpcWork[36]
+// r13 + 0x19b4 = pointer to NpcWork[16]?
+struct NpcWork {
+    .0x230 = BattleSetupInfoWork battle_setup_info;
+} [size = 0x340]
+
+struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
+    .0x00000 = int16 turn_count;
+    .0x00004 = int32 ? // has to do with BattleSetSeq(TLBI, 0, ...)
+    .0x0000a = int8, something related to direction / alliance?
+    .0x00012 = int8, something related to other direction / alliance?
+    
+    .0x00020 ~ .0x0011f = BattleUnitWork*[64] battle_units;
+    .0x00120 ~ .0x0021f = int32[64] move_priority_queue;  // unit id
+    .0x00220 ~ .0x0041f = int32[2] [64] phase_evt_queue;  // unit id, priority
+    .0x00420 = int32 active_unit_id;
+    .0x00424 = int32 ?
+    .0x00428 ~ .0x00eef or later = BattleTargetWork target_work?  // unknown size
+    
+    // 0x80: Disables audience spawning items? (May have other purposes)
+    // 0x200: Mario is currently acting and has only the basic Jump move
+    // 0x400: Mario is currently acting and has only the basic Hammer move
+    // 0x40'0000: Show "Merlee curse has run out" sequence?
+    .0x00ef4 = uint32 ?
+    
+    // Battle sequence states 1-7 (#3 = turn, #4 = phase, #5 = subphase?)
+    .0x00f0c ~ .0x00f27 = int32[7] ? // have to do with BattleSetSeq
+    .0x00f2c ~ .0x0171b = BattlePadWork pad_work[4];
+    .0x0171c ~ .0x01c5f or later  // BattleCommandDisplay_ActMenuMain work
+    
+    // All part of BattleActionCommandManagerWork, starting at 0x1c90?
+    .0x01c90 = BattleUnitWork* ac_unit;
+    .0x01c94 = uint32 ac_setup_param_3?
+    .0x01c98 = uint32 ac_setup_param_4?
+    .0x01c9c = uint32 ac_state;  // 0 on setup, 100 on start, gen. 1000 on end?
+    // These function params are initialized from the ActionCommandList table:
+    .0x01ca0 = void* ac_main_function;
+    .0x01ca4 = void* ac_result_function;
+    .0x01ca8 = void* ac_disp_function;  // set only if not confused
+    .0x01cac = void* ac_delete_function;
+    .0x01cb0 = int32 ac_defense_result;
+    .0x01cb4 = int32 ac_result_count;  // 1+ if successful?
+    // .0x1cb8 == 1 (failure?) set in setup, & 2 = action command success
+    .0x01cb8 = uint32 ac_result;
+    .0x01cbc = int8 base_ac_difficulty?
+    .0x01cbd = int8 ac_difficulty;
+    .0x01cc0 ~ .0x01cc3 = uint32? ?
+    .0x01cc4 = uint32 ac_flag;
+    .0x01cc8 ~ .0x01ce7 = uint32[8] ac_params;  // AcSetParamAll
+    .0x01ce8 ~ ?        = uint32[?] ac_output_params;
+    .0x01d08 ~ .0x01d17 = uint32[4] ac_gauge_params;  // AcSetGaugeParam
+    .0x01d18 ~ .0x01d1b = uint32? ?
+    .0x01d1c ~ .0x01f17 = BattlePadWork ac_manager_pad_work;
+    // This space might be used for different purposes for different commands...
+    // It seems 0x1f20 ~ 0x174b and 0x174c ~ 0x177f... are treated differently
+    // for at least some action command functions.
+    .0x01f64 = float run_away_meter;
+    
+    .0x02738 ~ .0x02753 = BattleInformationWork battle_info_work;
+    .0x02754 ~ .0x02857 = BattleCameraWork camera_work;
+    .0x02858 ~ .0x1616b = BattleAudienceWork audience_work;
+    .0x1616c ~ .0x1629f = BattleBreakSlotWork bingo_work;
+    .0x162a0 ~ .0x163d3 = BattlePartyInfoWork[7] party_info_work;
+    // Set if given badges are equipped.
+    // 0x134 = 1
+    // 0x135 = 2
+    // 0x136 = 4 
+    // 0x137 = 8 
+    // 0x138 = 0x10 
+    // 0x139 = 0x80
+    // 0x13b = 0x100
+    // 0x13c = 0x400
+    // 0x13d = 0x800
+    // 0x13e = 0x200
+    // 0x13f = 0x1000
+    .0x163d4 = uint32 badge_equipped_flags;
+    
+    .0x163fc ~ .0x16f37 = BattleStageWork stage_work;
+    .0x16f38 ~ .0x16f5b = BattleActRecordWork act_record_work;
+    .0x16f5c ~ .0x1715b = BattleAfterReactionWork[64] after_reaction_queue;
+    .0x1715c ~ .0x180db = BattleStageObjectWork[32] stage_object_work;
+    
+    // .0x180dc ~ .0x182cb = Has to do with stage effects...
+    
+    .0x180f8 = uint8 stage_effects_allowed?  // 2,4,8,20 = !A1,!A2,!B,object
+    .0x180fc = uint32 ? related to A1 or B-destroying event id?
+    .0x18100 = uint32 ? related to A1-destroying event id?
+    .0x18104 = uint32 ? related to A2-destroying event id?
+    .0x18108 = uint32 ? related to B-destroying event id?
+    
+    // Size = 0x310; selected per Mario's rank.
+    // .0x000 = int8[12] 4 weights per jet turn state for changing direction;
+    // they're identical for all ranks except B-rank, for some reason.
+    // Not sure exactly what they end up doing (see _Nozzle_Change_Check).
+    // .0x00c = int8[4] jet_type_weights:
+    // Rank 0 = 100, 0, 0, 0
+    // Rank 1 = 65, 35, 0, 0
+    // Rank 2 = 35, 25, 40, 0
+    // Rank 3 = 20, 20, 25, 35
+    // Types: none / fog, ice, explosion, fire
+    // .0x010 = AttackParams[4] stage_jet_attack_params;
+    .0x18110 = BattleStageNozzleData* nozzle_data;
+    // Size = 0x78c; selected per Mario's rank.
+    // .0x000 = AttackParams ceiling_fall_params;
+    // .0x0c0 = uint8[9] object_type_weights:
+    // Rank 0 = 0X00 0000 X
+    // Rank 1 = XX00 0X00 X
+    // Rank 2 = XXXX XX00 X
+    // Rank 3 = XXXX XXXX X
+    // Types:
+    // 0 = basin
+    // 1 = bucket
+    // 2 = small bugs
+    // 3 = large bug
+    // 4 = fork
+    // 5 = water
+    // 6 = statue
+    // 7 = meteor
+    // 8 = ceiling light
+    // .0x0cc = AttackParams[9] object_attack_params;
+    .0x18114 = BattleStageFallObjectData* fall_object_data;
+    
+    // Used for constructing attacks for stage jets, maybe others.
+    .0x18120 = AttackParams[2] temp_attack_params;
+    .0x182a0 = int8[3] stage_jet_face_directions;
+    .0x182a3 = int8[3] stage_jet_changing_face_directions;
+    .0x182a6 = int8 current_stage_jet_type;
+    .0x182a7 = ? padding, probably
+    .0x182a8 = uint32 stage_jet_change_event_id?
+    .0x182ac = ?
+    .0x182b0 = ?
+    .0x182b4 = uint32 stage_jet_fire_event_id;
+    .0x182b8 = ?? related to stage jets / fog?
+    .0x182bc = int32 fog_active;
+    .0x182c0 = ?
+    .0x182c4 = uint32 ceiling_fall_event_id;
+    .0x182c8 = uint32 object_fall_event_id;
+    
+    .0x182cc ~ .0x18c8b = BattleIconWork icon_work;
+    
+    .0x18da0 ~ .0x18ff7 = BattleStatusChangeMsgWork status_change_msg_work;
+    .0x18ff9 = int8 impending_merlee_spell;
+    
+    // 0xc length struct regarding impending SP / audience, bingo card stuff...
+    .0x18ffc = AttackParams* impending_bonus_attack;
+     // 0.5 + 0.25 * btlevtcmd_AudienceDeclareACResult (AC level; 2 = Nice, e.g.)
+    .0x19000 = float impending_sp_ac_success_multiplier;
+    .0x19004 = int8 // copied from attack params 0x18 if stylish successful
+    .0x19005 = int8 // copied from attack params 0x19
+    .0x19006 = int8 // copied from attack params 0x1a
+    .0x19007 = int8 // copied from attack params 0x1b if stylish successful
+    
+    .0x19060 = int32[4] reserve_items;  // BattleConsumeReserveItem
+    
+    .0x19074 = bool last_ac_successful?  // btlevtcmd_AudienceDeclareACResult
+    
+    // Likely (IMO) the remnant of some battle debugging functionality.
+    // 1 = force trigger object fall
+    // 0x10 = force trigger A1 bg fall
+    // 0x20 = force trigger A2 bg fall
+    // 0x40 = force trigger B bg fall
+    // 0x80 = force trigger ceiling fall
+    // 0x100 = force trigger stage nozzles
+    // 0x200 = force trigger stage nozzles to turn
+    // 0x10000 = fix starting target audience amount to .0x19084
+    // 0x20000 = trigger audience item frenzy
+    // 0x40000 = force Luigi to appear at beginning of fight
+    // 0x80000 = force trigger bingo card (.0x1908c = card to force)?
+    .0x19078 = uint32 ?
+    
+    .0x19088 = int?? force_monotype_audience;
+    .0x1908c = int?? bingo_card_type_to_force;
+} [size = 0x19098]
+
+struct BattleActRecordWork {
+    .0x00 = int8 mario_times_jump_moves_used;
+    .0x01 = int8 mario_times_hammer_moves_used;
+    .0x02 = int8 mario_times_attacking_special_moves_used;
+    .0x03 = int8 mario_times_non_attacking_special_moves_used;
+    .0x04 = int8 mario_damage_taken;
+    .0x05 = int8 partner_damage_taken;
+    .0x06 = int8 mario_damaging_hits_taken;
+    .0x07 = int8 partner_damaging_hits_taken;
+    .0x08 = int8 max_power_bounce_combo;
+    .0x09 = int8 mario_num_times_attack_items_used;
+    .0x0a = int8 mario_num_times_non_attack_items_used;
+    .0x0b = int8 partner_num_times_attack_items_used;
+    .0x0c = int8 partner_num_times_non_attack_items_used;
+    .0x0d = int8 mario_times_changed_partner;
+    .0x0e = int8 partner_times_changed_partner;
+    .0x0f = int8 mario_times_attacked_audience;
+    .0x10 = int8 partner_times_attacked_audience;
+    .0x11 = int8 mario_times_appealed;
+    .0x12 = int8 partner_times_appealed;
+    .0x13 = int8 mario_fp_spent;
+    .0x14 = int8 mario_times_move_used; (all attacks + Charge / Defend / Dip)
+    .0x15 = int8 partner_fp_spent;
+    .0x16 = int8 partner_times_move_used;
+    .0x17 = int8 mario_times_charge_used;
+    .0x18 = int8 partner_times_charge_used;
+    .0x19 = int8 mario_times_super_charge_used;
+    .0x1a = int8 partner_times_super_charge_used;
+    .0x1b = int8 mario_times_ran_away;
+    .0x1c = int8 partner_times_ran_away;
+    .0x1d = int8 partner_times_attacking_moves_used;
+    .0x1e = int8 partner_times_non_attacking_moves_used;
+    .0x1f = int8 turns_spent;
+    .0x20 = int8 num_successful_ac;  // counts to 200 instead of 100
+    .0x21 = int8 num_unsuccessful_ac;  // counts to 200 instead of 100
+} [size = 0x24]
+
+struct BattleActionCommandManagerWork {
+} [size = ???]
+
+struct BattleAfterReactionWork {
+} [size = 0x8]
+
+struct BattleAudienceMemberWork {
+    // if 0x80 set, count as 2 audience slots
+    .0x000 = uint32 0x000_unk_flags;
+    
+    // 0 = Wait
+    // 1 = WaitHurimuki
+    // 2 = WaitKubiKatamuke
+    // 3 = WaitJump
+    // 4 = JoyRaiseArm
+    // 5 = JoyJump
+    // 6 = JoyJump2
+    // 7 = ItemOn
+    // 8 = ItemThrow
+    // 9 = Booing
+    // 0xa = Damage
+    // 0xb = Enter
+    // 0xc = Escape
+    // 0xd = Sleep
+    // 0xe = TransEvt (Boo transparency event)
+    // 0xf = Intrude (Shy Guy shenanigans)
+    // 0x10 = Sing
+    // 0x11 = Shell
+    // 0x12 = Ignite
+    // 0x13 = Fire
+    // 0x14 = Eat
+    // 0x15 = ?
+    .0x019 = int8 state;
+    
+    // 0 = Toad
+    // 1 = X-Naut
+    // 2 = Boo
+    // 3 = Hammer Bro
+    // 4 = Dull Bones
+    // 5 = Shy Guy
+    // 6 = Dayzee
+    // 7 = Puni
+    // 8 = Koopa
+    // 9 = Bulky Bob-omb
+    // 10 = Goomba
+    // 11 = Piranha Plant
+    // 12 = Luigi?
+    .0x01b = int8 type;
+    
+    .0x12c = int32 phase_evt_turn_countdown?  // for bomb explosion, koopa shell?
+} [size = 0x134]
+
+struct BattleAudienceItemWork {
+} [size = 0x48]
+
+struct BattleAudienceWork {
+    // 0x8 - CheckReactionPerPhase returns 0 in state 0
+    // 0x10 = Case_ActionCommandGood
+    // 0x20 = Case_ActionCommandBad
+    // 0x40 = Case_GuardGood
+    // 0x80 = Case_GuardBad
+    // 0x100 = Case_AcrobatGood
+    // 0x200 = Case_AcrobatBad (impossible to trigger? separate case for "NoTry")
+    // 0x400 = Case_EnemyDamage
+    // 0x800 = Case_EnemyNoDamage
+    // 0x1000 = Case_KillEnemy
+    // 0x4000 - Required unset for CheckReactionPerPhase event type 9/11/12 to occur
+    // 0x8000 - Punis scared? skip event CheckReactionPerPhase state 0xa-b if unset
+    // 0x40000 - turn-end phase event trigger chance does not increment;
+                 CheckReactionPerPhase jumps to state F and returns 1 in state 0
+    .0x00000 = uint32 state;
+    
+    .0x00004 = currently_executing_event_id?
+    
+    .0x001bc = BattleAudienceMemberWork members[200];
+    .0x0f25c = BattleAudienceItemWork items[200];
+    
+    .0x13774 = float current_audience_count;  // always integer
+    // 1-indexed lookup into 0x802f9eac (U), or 5.0 + 3.0 * Mario's level
+    .0x13778 = float audience_gain_rate;
+    .0x1377c = float target_audience_value;
+    .0x13780 = float extra_initial_audience_value;
+    .0x13784 = int32 current_audience_count_int;
+    .0x13788 = int32 current_audience_count_int_right?
+    .0x1378c = int32 current_audience_count_int_left?
+    .0x13790 = int32 max_audience_for_stage_rank;
+    // Used to select types for new audience members, presumably.
+    .0x13794 = int32[12] actually_really_final_audience_weights;
+    .0x137c4 = int32 impending_star_power;
+    // Copied from battle work .0x18ffc
+    .0x137c8 = void* impending_bonus_info;
+    // From BattleAudience_PerAct
+    .0x137cc = int32 num_successive_crowd_pleasing_events;  // up to 2
+    .0x137d0 = int32 num_successive_crowd_displeasing_events;  // up to 5
+    .0x137d4 = int32 num_stylish_commands;  // per attack, up to 5
+    
+    // 0 = Generally fall through to 5 
+    // 5 = Check for BBB explosion, go to 6 if so or 7 otherwise (fallthrough)
+    // 6, 7 = Handle BBB chain explosion, go to 8, 0xd respectively, break
+    // 8 = Play BBB "msg_heavy_bomb_fire" event, go to 9, break
+    // 9 = If event .0x00004 is done executing, go to 0xa, break
+    // 0xa = If .00000 & 0x8000, go to 0xf, else unset 0x8000, play
+    //       "msg_puni_all_escape" event, go to 0xb; break in either case
+    // 0xb = If event .0x00004 is done executing, go to 0xf, break
+    // 0xd = Pick random eligible event, go to state 0xc (fallthrough)
+    // 0xc = Execute chosen eligible event, else go to state 0xf, break
+    // 0xf = Do standard jump stuff / BINGO trigger, fallthrough to return 0
+    .0x137dc = uint32 check_phase_reaction_state;
+    
+    // per PistonMiner; not sure how these are used?
+    .0x137e4 = int32 present_item_no;
+    .0x137e8 = int32 present_item_type;  // 0 for good item, 1 for attack
+    .0x137ec = int32 present_target_unit_id;
+    
+    // Also determines rate of spawning items; rand(1800), rand(6000), rand(30k)
+    // for 0, 1, and 2 respectively (if slots are open), or rand(60) for frenzy
+    .0x137f0 = int32 items_spawned_this_turn;
+    // Set after enemy phase; 80% 0, 10% 1, 5% 2, 5% 3 normally, 10k for frenzy
+    .0x137f4 = int32 max_items_this_turn;
+    .0x137f8 = int32 items_thrown_this_burst;  // max of 3
+    // Copied from base object; notably the damage is increased by # thrown - 1
+    .0x137fc = AttackParams item_throw_attack_params;
+    
+    // 0 = Require Toad (in view?); spawn item
+    // 1 = Require Koopa not already in Shell mode; put in shell for 5 turns
+    // 2 = Require Dull Bones; spawn a buncha items?
+    // 3 = if Puni weight != 0, try to fill all audience slots w/Punis
+    // 4 = Require Boo; transparency event
+    // 5 = Require X-Naut; spawn a buncha items; triggered on counter / no damage
+    // 6 = Require X-Naut; spawn item (unused)
+    // 7 = Require Hammer Bro; spawn item; triggered on failed Hammer AC
+    // 8 = Require Shy Guy; spawn item
+    // 9 = Require Shy Guy and .0x00000 !has 0x4000; do shenanigans
+    // 0xa = Require Dayzee; have it sing
+    // 0xb = Require Bulky Bob-omb not already ignited and .0x00000 !has 0x4000; 
+    //       ignite for 5 turns
+    // 0xc = Require Piranha Plant close to target and .0x00000 !has 0x4000; eat
+    // 0xd = Require Luigi; spawn item
+    .0x138cc = uint32 possible_phase_event_types[14];
+    .0x13904 = int32 num_possible_phase_events;
+    .0x13908 = int32 turn_end_phase_event_trigger_chance;
+    
+    // some sort of excitement level? counts up to 4 in BattleAudienceJoy
+    .0x1390c = int32 ?
+} [size = 0x13914]
+
+struct BattleBreakSlotReelWork {
+    .0x000 = int32 index;
+    .0x004 = int32 ? // animation state?
+    .0x008 = int32 ? // state / is active?
+    .0x00c = int32 ?
+    .0x010 = int32 icon;
+    // 2x 0,1,2 and 1x 3,4 for the first 2 reels; one of each for the third
+    .0x014 = int32* possible_icons;
+    .0x018 = int32 num_possible_icons;  // 8 for first two, 5 for last
+    .0x01c = vector3 icon_position;
+    
+    .0x034 = vector3 icon_scale;
+} [size = 0x5c]
+
+struct BattleBreakSlotWork {
+    .0x000 = uint32 ? // force shine bingo card if has 1 or 4?
+    .0x00c = int32 slot;
+    .0x010 = int32 active_bingo_turn_count;  // 4 turns for M/F/St, 6 for Shine
+    .0x014 = float active_bingo_sp_multiplier;  // 2x for M/F/St, 3x for Shine
+    .0x018 ~ .0x12b = BattleBreakSlotReelWork[3] reels;
+} [size = 0x134]
+
+struct BattleCameraWork {
+} [size = 0x104]
+
+struct BattleIconWork {
+} [size = 0x9c0]
+
+struct BattleInformationWork {
+    .0x00 = uint32 mode;
+    .0x04 = void* party;
+    .0x08 = uint32 first_attack;
+    .0x0c = BattleSetupInfoWork setup_info;
+    .0x10 = uint32 result;
+    .0x14 = uint32 ?
+    
+    // .0x18,1a,1b filled from BattleSetupInfoWork
+    .0x18 = BtlActRecCondition(uint8) btlactrec_condition;
+    .0x19 = uint8 btlactrec_fulfillment_status;
+    .0x1a = uint8 btlactrec_param1;
+    .0x1b = uint8 btlactrec_param2;
+} [size = 0x1c]
+
+struct BattlePadWork {
+    .0x018 ~ .0x08f = uint32 input_history[30];
+} [size = 0x1fc]
+
+struct BattlePartyInfoWork {
+} [size = 0x2c]
+
+struct BattleSetupInfoWork {  // "Field Battle Info" / "FBIT"
+    .0x00 = BattleStageData* stage_data;
+    .0x04 = uint32 ?  // flags copied from BattleData.0x18;
+    .0x08 = uint32 ?  // copied from BattleData.0x08;
+    .0x0c = int32 item_dropped;
+    .0x10 = int32 heart_drops;
+    .0x14 = int32 flower_drops;
+    .0x18 = BattlePartyData* party_data;
+    .0x1c = int32 held_items[8];
+    .0x3c = ItemDropData* drop_tables[8];
+    
+    .0xac = int32 special_audience_modes;
+    .0xb0 = int8 final_audience_weights[16];
+    .0xc0 = const char* music_name;
+    // Determined by tou::evt_tou_get_rule_info.
+    // param1 and param2 are always identical in vanilla conditions.
+    .0xc4 = uint8 btlactrec_condition;
+    .0xc5 = uint8 btlactrec_param1;
+    .0xc6 = uint8 btlactrec_param2;
+} [size = 0xc8]
+
+struct BattleStageObjectWork {
+    .0x64 = BattleStageObjectData* base_data;
+} [size = 0x7c]
+
+struct BattleStageWork {
+    .0xb24 = vector3 stage_size;
+    .0xb30 = vector3 audience_size;
+} [size = 0xb3c]
+
+struct BattleStatusChangeMsgWork {
+} [size = 0x258]
+
+struct BattleTargetWork {
+    .0x000 = AttackParams* attack;
+    .0x004 ~ .0xa6b = BattleTargetInfoWork[74] target_info;
+    .0xa6c = int8 num_targets;
+    .0xa6d ~ .0xab6 = int8[74] target_info_indices;
+    .0xab8 = int32 attacker_id;
+    .0xabc = int32 attacker_enemy_belong;
+    .0xac0 = AttackTargetClass_Flags attack_target_flags_hi;
+    .0xac4 = AttackTargetProperty_Flags attack_target_flags_lo;
+    .0xac8 = int32 attack_direction?  // -1 or 1, from what I can tell
+} [size = ???]
+
+struct BattleTargetInfoWork {
+    .0x00 = int16 unit_index;
+    .0x02 = int16 part_index;  // one-indexed
+    .0x04 = int16 unk_pos1_x;
+    .0x06 = int16 unk_pos1_y;
+    .0x08 = int16 unk_pos1_z;
+    .0x0a = padding?
+    .0x0c = vecFloat3 unk_pos2;
+    .0x18 = ?
+    .0x1c = ?  // something to do with x-pos or facing direction?
+    .0x1d = ?  // something to do with x-pos or facing direction?
+    .0x1e-1f = padding?
+    .0x20 = ?
+} [size = 0x24]
+
+// Very scant documentation / intermediate structures...
+
+// param5 for BattleCheckDamage / BattlePreCheckDamage, etc.
+enum MysteryAttackFlags {
+    0x100 = countered?
+    0x40000 = guarded?
+    0x80000 = superguarded?
+    0x10'0000 = bypass evasion / accuracy checks?
+    0x20'0000 = set if 0x1000 or 0x2000 matches parts.status.0x1000 or 0x2000
+    0x40'0000 = set if 0x4000, 0x100, and p.sf 0x800
+    0x2000'0000 = disables weapon's status?
+    0x4000'0000 = apply status regardless of counter?
+}
+
+struct CounterWork {
+    .0x00 = bool? ?
+    .0x04 = bool payback_countered;
+    .0x08 = bool fire_special_countered;
+    .0x0c = bool poison_special_countered;
+    .0x10 = bool electric_special_countered;
+    .0x14 = bool ice_special_countered;
+    .0x18 = bool hold_fast_countered;
+    .0x1c = bool return_postage_countered;
+    .0x20 = enum ?
+    .0x24 = enum counter_type?
+    .0x28 = int32 counter_damage;
+    .0x2c = enum ?
+} [size = 0x30]
+
+// Incredibly unhelpfully sparse unless you're looking for one of these specific
+// things; PistonMiner has far better documentation.
+struct SaveFileData {
+    .0x0048 = int64_t local_time? (40.5M ticks/sec)
+    .0x00b0 = int64_t local_time_hll_sign_last_read;
+    .0x00b8 = int16_t last_hll_sign_number_read;
+    .0x00c0 = int64_t local_time_hll_pick_last_received;
+    .0x00c8 = int16_t hll_pick_number;
+    .0x00ca = int16_t hll_grand_prize_days_remaining;   // expected 335-395
+    .0x00cc = int16_t hll_second_prize_days_remaining;  // expected 85-115
+    .0x00ce = int16_t hll_third_prize_days_remaining;   // expected 25-35
+    .0x00d0 = int16_t hll_fourth_prize_days_remaining;  // expected 4-10
+    .0x012c = char current_map[16];
+    .0x013c = char current_area[16];
+    .0x0160 = void* loaded_rel_ptr;
+    .0x0168 = void* fbat_ptr;  (.0x08 = NpcWork)
+    .0x0178 = char gswfData[1024];
+    .0x0578 = char gswData[2048];  // Pit of 100 trials floor = .0xaa1
+    ...
+} [size = 0x4000]
