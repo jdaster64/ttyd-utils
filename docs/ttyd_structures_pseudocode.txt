@@ -65,9 +65,9 @@ enum AttackTargetClass_Flags {
 enum AttackTargetProperty_Flags {
     0x1 = Tattleable
     0x2 = ? Used by "dummy no item" and Fuzzy Horde; similar to 0x8?
-    0x4 = CannotReachCeiling (used by jumps, Koops' attacks, etc.)
-    0x8 = Quakelike (used by Quake Hammer, Magnus' earthquake, etc.)
-    0x10 = TornadoJumplike (hits all but grounded)
+    0x4 = CannotTargetCeiling (used by jumps, Koops' attacks, etc.)
+    0x8 = CannotTargetFloating (used by Quake Hammer, Magnus' earthquake, etc.)
+    0x10 = CannotTargetGrounded (e.g. Tornado Jump, hits all but grounded)
     0x1000 = Jumplike
     0x2000 = Hammerlike (gulp, bomb, love slap, most grounded enemy attacks, etc.)
     0x4000 = ShellTosslike (Koops' and mostly shell-like enemies' attacks)
@@ -1080,7 +1080,7 @@ struct BattleActRecordWork {
     .0x11 = int8 mario_times_appealed;
     .0x12 = int8 partner_times_appealed;
     .0x13 = int8 mario_fp_spent;
-    .0x14 = int8 mario_times_move_used; (all attacks + Charge / Defend / Dip)
+    .0x14 = int8 mario_times_move_used; (all non-Strategies + Charge / Defend / Dip)
     .0x15 = int8 partner_fp_spent;
     .0x16 = int8 partner_times_move_used;
     .0x17 = int8 mario_times_charge_used;
@@ -1356,7 +1356,9 @@ struct BattleTargetInfoWork {
 
 // param5 for BattleCheckDamage / BattlePreCheckDamage, etc.
 enum MysteryAttackFlags {
-    0x100 = countered?
+    0x17, 0x18, 0x19, 0x1a, 0x1b = related to elements 0, 1, 2, 3, 4?
+    0x100 = ?  // seems to be set for pretty much all attacks
+    0x20000 = nullifiable by AoN?
     0x40000 = guarded?
     0x80000 = superguarded?
     0x10'0000 = bypass evasion / accuracy checks?
@@ -1364,6 +1366,7 @@ enum MysteryAttackFlags {
     0x40'0000 = set if 0x4000, 0x100, and p.sf 0x800
     0x2000'0000 = disables weapon's status?
     0x4000'0000 = apply status regardless of counter?
+    0x8000'0000 = pierce def attr. type 4 (Achilles' heel defense); used on Gulp
 }
 
 struct CounterWork {
