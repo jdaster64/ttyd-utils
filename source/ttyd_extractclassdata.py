@@ -20,8 +20,8 @@ FLAGS.DefineString("output_dir", "")
 FLAGS.DefineBool("use_raw_classes", False)
 
 # Text files with enemy and item IDs and names.
-FLAGS.DefineString("enemies", "./enemy_names.txt")
-FLAGS.DefineString("items", "./item_names.txt")
+FLAGS.DefineString("enemies", "../resources/enemy_names.txt")
+FLAGS.DefineString("items", "../resources/item_names.txt")
 
 g_DatabufMap = {}
 
