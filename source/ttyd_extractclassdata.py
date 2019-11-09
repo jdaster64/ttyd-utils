@@ -30,6 +30,119 @@ k_MaxItemId = 0x153
 g_EnemyIds = []
 g_ItemIds = []
 
+# Maps of flag values to flag names for various bitfields.
+g_AttackTargetClassFlags = {
+    0x1: "TC_CannotTargetMarioOrShellShield",
+    0x2: "TC_CannotTargetPartner",
+    0x10: "TC_CannotTargetEnemy",
+    0x20: "TC_CannotTargetTreeOrSwitch",
+    0x40: "TC_CannotTargetSystemUnits",
+    0x100: "TC_CannotTargetOppositeAlliance",
+    0x200: "TC_CannotTargetOwnAlliance",
+    0x1000: "TC_CannotTargetSelf",
+    0x2000: "TC_OnlyTargetSelfOrSameSpecies",
+    0x4000: "TC_OnlyTargetSelf",
+    0x100000: "TC_OnlyTargetHighPriorityParts",
+    0x200000: "TC_OnlyTargetPriorityParts",
+    0x1000000: "TC_SingleTarget",
+    0x2000000: "TC_MultipleTarget",
+}
+g_AttackTargetPropertyFlags = {
+    0x1: "TP_Tattleable",
+    0x4: "TP_CannotTargetCeiling",
+    0x8: "TP_CannotTargetFloating",
+    0x10: "TP_CannotTargetGround",
+    0x1000: "TP_Jumplike",
+    0x2000: "TP_Hammerlike",
+    0x4000: "TP_ShellTosslike",
+    0x100000: "TP_RecoilDamage",
+    0x1000000: "TP_CanOnlyTargetFrontmost",
+    0x10000000: "TP_UsedOnSelfOrAlliesOnly?",
+    0x20000000: "TP_UsableOnOpposingTeam?",
+}
+g_AttackSpecialPropertyFlags = {
+    0x1: "SP_BadgeCanAffectPower",
+    0x2: "SP_StatusCanAffectPower",
+    0x4: "SP_IsChargeable",
+    0x8: "SP_CannotMiss",
+    0x10: "SP_DiminishingReturnsByHit",
+    0x20: "SP_DiminishingReturnsByTarget",
+    0x40: "SP_PiercesDefense",
+    0x80: "SP_UnusedCanBreakIce?",
+    0x100: "SP_IgnoreTargetStatusVulnerability",
+    0x200: "SP_UnknownGaleForceOnly?",
+    0x400: "SP_IgnitesIfBurned",
+    0x1000: "SP_FlipsShellEnemies",
+    0x2000: "SP_FlipsBombFlippableEnemies",
+    0x4000: "SP_GroundsWingedEnemies",
+    0x10000: "SP_CanUseItemIfConfused?",
+    0x20000: "SP_Unguardable?",
+}
+g_AttackCounterResistanceFlags = {
+    0x1: "CR_Electric",
+    0x2: "CR_TopSpiky",
+    0x4: "CR_PreemptiveFrontSpiky",
+    0x8: "CR_FrontSpiky",
+    0x10: "CR_Fiery",
+    0x20: "CR_Icy",
+    0x40: "CR_Poison",
+    0x80: "CR_Explosive",
+    0x100: "CR_VolatileExplosive",
+    0x200: "CR_Payback",
+    0x400: "CR_HoldFast",
+}
+g_AttackTargetWeightingFlags = {
+    0x1: "TW_PreferMario",
+    0x2: "TW_PreferPartner",
+    0x4: "TW_PreferFront",
+    0x8: "TW_PreferBack",
+    0x10: "TW_PreferSameAlliance",
+    0x20: "TW_PreferSameAllianceButNot2",
+    0x100: "TW_PreferLessHealthy",
+    0x200: "TW_GreatlyPreferLessHealthy",
+    0x400: "TW_PreferLowerHP",
+    0x800: "TW_PreferHigherHP",
+    0x1000: "TW_PreferInPeril",
+    0x2000: "TW_NoEffect0x2000?",
+    0x80000000: "TW_ChooseWeightedRandomly",
+}
+g_UnitPartsAttributeFlags = {
+    0x1: "PA_HighestPriorityTarget",
+    0x2: "PA_HighPriorityTarget",
+    0x4: "PA_PriorityTarget",
+    0x10: "PA_NonPriorityTarget0x10",
+    0x80: "PA_WeakToAttackFxR",
+    0x100: "PA_WeakToIcePower",
+    0x800: "PA_IsWinged",
+    0x1000: "PA_IsShelled",
+    0x2000: "PA_IsBombFlippable",
+    0x4000: "PA_NonPriorityTarget0x4000",
+    0x10000: "PA_NeverTargetable",
+    0x80000: "PA_Untattleable",
+    0x100000: "PA_JumplikeCannotTarget",
+    0x200000: "PA_HammerlikeCannotTarget",
+    0x400000: "PA_ShellTosslikeCannotTarget",
+    0x800000: "PA_Unknown0x800000",
+    0x20000000: "PA_IsImmuneToDamageOrStatus",
+    0x40000000: "PA_IsImmuneToOHKO",
+    0x80000000: "PA_IsImmuneToStatus",
+}
+g_UnitPartsCounterAttributeFlags = {
+    0x1: "PCA_TopSpiky",
+    0x2: "PCA_PreemptiveFrontSpiky",
+    0x4: "PCA_FrontSpiky",
+    0x10: "PCA_Fiery",
+    0x20: "PCA_FieryStatus",
+    0x40: "PCA_Icy",
+    0x80: "PCA_IcyStatus",
+    0x100: "PCA_Poison",
+    0x200: "PCA_PoisonStatus",
+    0x400: "PCA_Electric",
+    0x800: "PCA_ElectricStatus",
+    0x1000: "PCA_Explosive",
+    0x2000: "PCA_VolatileExplosive",
+}
+
 class ExtractClassDataError(Exception):
     def __init__(self, message=""):
         self.message = message
@@ -65,6 +178,16 @@ def _ParseFlagAttributes(dat, address, attr_map):
         if attribute_flags & mask:
             attributes.append(flag_name)
     return "|".join(attributes)
+            
+# Alternative helper function for parsing bitfields.
+def _ParseFlagAttributesIndividually(
+    row, dat=None, address=None, attr_map=None, header=False):
+    for (mask, flag_name) in attr_map.items():
+        if header:
+            row.append(flag_name)
+        else:
+            attribute_flags = dat.read_u32(address)
+            row.append("X" if (attribute_flags & mask) != 0 else "")
         
 # Helper function for parsing strings.
 def _ParseJisString(dat, address):
@@ -107,12 +230,20 @@ def _ParseAttackParams(df, row, area="", address=0, header=False):
             "BG No A1-A2 Fall Weight", "BG B Fall Chance", "Nozzle Turn Chance",
             "Nozzle Fire Chance", "Ceiling Fall Chance", "Object Fall Chance",
             "Unknown Stage Hazard Chance",
-            # Bitfield flags.
-            "Target Class Flags", "Target Property Flags",
-            "Special Property Flags", "Counter Resistance Flags",
-            "Target Weighting Flags",
         ]:
             row.append(colname)
+            
+        # Headers for bitfield flags.
+        _ParseFlagAttributesIndividually(
+            row, attr_map=g_AttackTargetClassFlags, header=True)
+        _ParseFlagAttributesIndividually(
+            row, attr_map=g_AttackTargetPropertyFlags, header=True)
+        _ParseFlagAttributesIndividually(
+            row, attr_map=g_AttackSpecialPropertyFlags, header=True)
+        _ParseFlagAttributesIndividually(
+            row, attr_map=g_AttackCounterResistanceFlags, header=True)
+        _ParseFlagAttributesIndividually(
+            row, attr_map=g_AttackTargetWeightingFlags, header=True)
     else:
         # For diagnostics.
         print("%s 0x%08x" % (area, address))
@@ -155,84 +286,19 @@ def _ParseAttackParams(df, row, area="", address=0, header=False):
         for idx in range(0x80, 0xae):
             row.append(dat.read_s8(address + idx))
         # Stage hazard parameters.
-        for idx in range(0xb4, 0xbd):
+        for idx in range(0xb4, 0xbe):
             row.append(dat.read_s8(address + idx))
         # Bitfield flags.
-        row.append(_ParseFlagAttributes(dat, address + 0x64, {
-            0x1: "CannotTargetMarioOrShellShield",
-            0x2: "CannotTargetPartner",
-            0x10: "CannotTargetEnemy",
-            0x20: "CannotTargetTreeOrSwitch",
-            0x40: "CannotTargetSystemUnits",
-            0x100: "CannotTargetOppositeAlliance",
-            0x200: "CannotTargetOwnAlliance",
-            0x1000: "CannotTargetSelf",
-            0x2000: "OnlyTargetSelfOrSameSpecies",
-            0x4000: "OnlyTargetSelf",
-            0x100000: "OnlyTargetHighPriorityParts",
-            0x200000: "OnlyTargetPriorityParts",
-            0x1000000: "SingleTarget",
-            0x2000000: "MultipleTarget",
-        }))
-        row.append(_ParseFlagAttributes(dat, address + 0x68, {
-            0x1: "Tattleable",
-            0x4: "CannotReachCeiling",
-            0x8: "Quakelike",
-            0x10: "TornadoJumplike",
-            0x1000: "Jumplike",
-            0x2000: "Hammerlike",
-            0x4000: "ShellTosslike",
-            0x100000: "RecoilDamage",
-            0x1000000: "CanOnlyTargetFrontmost",
-            0x10000000: "UsedOnSelfOrAlliesOnly?",
-            0x20000000: "UsableOnOpposingTeam?",
-        }))
-        row.append(_ParseFlagAttributes(dat, address + 0x74, {
-            0x1: "BadgeCanAffectPower",
-            0x2: "StatusCanAffectPower",
-            0x4: "IsChargeable",
-            0x8: "CannotMiss",
-            0x10: "DiminishingReturnsByHit",
-            0x20: "DiminishingReturnsByTarget",
-            0x40: "PiercesDefense",
-            0x80: "UnusedCanBreakIce?",
-            0x100: "IgnoreTargetStatusVulnerability",
-            0x200: "UnknownGaleForceOnly?",
-            0x400: "IgnitesIfBurned",
-            0x1000: "FlipsShellEnemies",
-            0x2000: "FlipsBombFlippableEnemies",
-            0x4000: "GroundsWingedEnemies",
-            0x10000: "CanUseItemIfConfused?",
-            0x20000: "Unguardable?",
-        }))
-        row.append(_ParseFlagAttributes(dat, address + 0x78, {
-            0x1: "Electric",
-            0x2: "TopSpiky",
-            0x4: "PreemptiveFrontSpiky",
-            0x8: "FrontSpiky",
-            0x10: "Fiery",
-            0x20: "Icy",
-            0x40: "Poison",
-            0x80: "Explosive",
-            0x100: "VolatileExplosive",
-            0x200: "Payback",
-            0x400: "HoldFast",
-        }))
-        row.append(_ParseFlagAttributes(dat, address + 0x7c, {
-            0x1: "PreferMario",
-            0x2: "PreferPartner",
-            0x4: "PreferFront",
-            0x8: "PreferBack",
-            0x10: "PreferSameAlliance",
-            0x20: "PreferSameAllianceButNot2",
-            0x100: "PreferLessHealthy",
-            0x200: "GreatlyPreferLessHealthy",
-            0x400: "PreferLowerHP",
-            0x800: "PreferHigherHP",
-            0x1000: "PreferInPeril",
-            0x2000: "NoEffect0x2000?",
-            0x80000000: "ChooseWeightedRandomly",
-        }))
+        _ParseFlagAttributesIndividually(
+            row, dat, address + 0x64, g_AttackTargetClassFlags)
+        _ParseFlagAttributesIndividually(
+            row, dat, address + 0x68, g_AttackTargetPropertyFlags)
+        _ParseFlagAttributesIndividually(
+            row, dat, address + 0x74, g_AttackSpecialPropertyFlags)
+        _ParseFlagAttributesIndividually(
+            row, dat, address + 0x78, g_AttackCounterResistanceFlags)
+        _ParseFlagAttributesIndividually(
+            row, dat, address + 0x7c, g_AttackTargetWeightingFlags)
         
 def _ParseAudienceItemTable(df, row, area="", address=0, header=False):
     if header:
@@ -381,7 +447,7 @@ def _ParseBattleUnit(df, row, area="", address=0, header=False):
             row.append(colname)
     else:
         dat = g_DatabufMap[area]
-        row.append(hex(dat.read_u32(address + 0x0)))
+        row.append("0x%02x" % (dat.read_u32(address + 0x0),))
         row.append(g_EnemyIds[dat.read_u32(address + 0x0)])
         row.append(_ParseJisString(dat, address + 0x4))
         row.append(dat.read_u16(address + 0x8))
@@ -403,7 +469,7 @@ def _ParseBattleUnit(df, row, area="", address=0, header=False):
         # Parse default BattleUnitAttribute flags.
         row.append(_ParseFlagAttributes(dat, address + 0xac, {
             0x2: "Ceiling",
-            0x4: "Unquakeable",
+            0x4: "Floating",
         }))
         row.append(maplib.LookupSymbolName(
             df, area, dat.read_u32(address + 0xb0),
@@ -448,9 +514,15 @@ def _ParseBattleUnitParts(df, row, area="", address=0, header=False):
     if header:
         for colname in [
             "Index", "Name", "Model Name", "Default Def", "Default Def Attr.",
-            "Default Pose Table", "Parts Attributes", "Parts Counter Attributes"
+            "Default Pose Table",
         ]:
             row.append(colname)
+            
+        # Headers for bitfield flags.
+        _ParseFlagAttributesIndividually(
+            row, attr_map=g_UnitPartsAttributeFlags, header=True)
+        _ParseFlagAttributesIndividually(
+            row, attr_map=g_UnitPartsCounterAttributeFlags, header=True)
     else:
         dat = g_DatabufMap[area]
         row.append(hex(dat.read_u32(address + 0x0)))
@@ -462,42 +534,11 @@ def _ParseBattleUnitParts(df, row, area="", address=0, header=False):
             df, area, dat.read_u32(address + 0x3c), "BattleUnitDefenseAttr_t"))
         row.append(maplib.LookupSymbolName(
             df, area, dat.read_u32(address + 0x48), "BattleUnitPoseTable_t"))
-        row.append(_ParseFlagAttributes(dat, address + 0x40, {
-            0x1: "HighestPriorityTarget",
-            0x2: "HighPriorityTarget",
-            0x4: "PriorityTarget",
-            0x10: "NonPriorityTarget0x10",
-            0x80: "WeakToAttackFxR",
-            0x100: "WeakToIcePower",
-            0x800: "IsWinged",
-            0x1000: "IsShelled",
-            0x2000: "IsBombFlippable",
-            0x4000: "NonPriorityTarget0x4000",
-            0x10000: "NeverTargetable",
-            0x80000: "Untattleable",
-            0x100000: "JumplikeCannotTarget",
-            0x200000: "HammerlikeCannotTarget",
-            0x400000: "ShellTosslikeCannotTarget",
-            0x800000: "Unknown0x800000",
-            0x20000000: "IsImmuneToDamageOrStatus",
-            0x40000000: "IsImmuneToOHKO",
-            0x80000000: "IsImmuneToStatus",
-        }))
-        row.append(_ParseFlagAttributes(dat, address + 0x44, {
-            0x1: "TopSpiky",
-            0x2: "PreemptiveFrontSpiky",
-            0x4: "FrontSpiky",
-            0x10: "Fiery",
-            0x20: "FieryStatus",
-            0x40: "Icy",
-            0x80: "IcyStatus",
-            0x100: "Poison",
-            0x200: "PoisonStatus",
-            0x400: "Electric",
-            0x800: "ElectricStatus",
-            0x1000: "Explosive",
-            0x2000: "VolatileExplosive",
-        }))
+        # Bitfield flags.
+        _ParseFlagAttributesIndividually(
+            row, dat, address + 0x40, g_UnitPartsAttributeFlags)
+        _ParseFlagAttributesIndividually(
+            row, dat, address + 0x44, g_UnitPartsCounterAttributeFlags)
         
 def _ParseItemParams(df, row, area="", address=0, header=False):
     if header:
