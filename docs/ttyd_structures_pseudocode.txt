@@ -288,10 +288,11 @@ struct AreaData {
 } [size = variable] ("area_xxx mapdata.o" in sym map, size varies from 0x18 to 0x90)
 
 struct AttackParams {
-    .0x00 = const char* name_msg;
+    .0x00 = const char* name_msg;  // btl_win_...
     .0x04 = int16 icon;
     .0x06 ~ .0x07 = int16 ? (unused?)
     .0x08 = int32 item_id;
+    .0x0c = const char* desc_msg;  // msg_...
     .0x10 = int8 base_accuracy;
     .0x11 = int8 base_fp_cost;
     .0x12 = int8 base_sp_cost;
@@ -332,7 +333,7 @@ struct AttackParams {
     .0x6d = int8 after_hit_effect;
     .0x6e = int8 weapon_ac_level;  // Base difficulty; Always 3 by default?
     .0x6f = int8 ?  // Always 2, seemingly unused; perhaps was a "Nice"-esque default reward.
-    .0x70 = const char* ac_message;
+    .0x70 = const char* ac_message;  // msg_ac_...
     .0x74 = AttackSpecialProperty_Flags special_property_flags;
     .0x78 = AttackCounterResistance_Flags resistance_flags;
     .0x7c = AttackTargetWeighting_Flags target_weighting_flags;
