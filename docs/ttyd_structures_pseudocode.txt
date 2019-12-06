@@ -1303,7 +1303,9 @@ struct BattleSetupInfoWork {  // "Field Battle Info" / "FBIT"
     .0x18 = BattlePartyData* party_data;
     .0x1c = int32 held_items[8];
     .0x3c = ItemDropData* drop_tables[8];
-    
+    .0x5c = int32 stolen_items[8];
+    .0x7c = int32 recovered_items[8];
+    .0x9c = void*[4]? battle_setup_work?  // npcGetBtlSetupWork(npc, offset/4)
     .0xac = int32 special_audience_modes;
     .0xb0 = int8 final_audience_weights[16];
     .0xc0 = const char* music_name;
