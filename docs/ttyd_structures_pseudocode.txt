@@ -1349,8 +1349,8 @@ struct BattleTargetInfoWork {
     .0x0a = padding?
     .0x0c = vecFloat3 unk_pos2;
     .0x18 = ?
-    .0x1c = ?  // something to do with x-pos or facing direction?
-    .0x1d = bool fg_or_bg_layer;  // z-position greater than -30 = fg
+    .0x1c = uint32 forward_distance;  // 0 to 48; higher = farther away
+    .0x1d = bool fg_or_bg_layer;  // rel. z-position greater than -30 = fg
     .0x1e-1f = padding?
     .0x20 = ?
 } [size = 0x24]
