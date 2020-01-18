@@ -76,8 +76,9 @@ enum AttackTargetProperty_Flags {
     0x100'0000 = CanOnlyTargetFrontmost
     0x200'0000 = ? (seemingly never used; referenced in code)
     0x400'0000 = ? (seemingly never used; referenced in code)
-    0x1000'0000 = Seems to be set on attacks used only on self / allies
-    0x2000'0000 = Seems to be set on attacks without 0x1000'0000
+    // Determines whether to swap attacking direction in BattleSamplingEnemy.
+    0x1000'0000 = TargetSameAllianceDirection
+    0x2000'0000 = TargetOppositeAllianceDirection
 }
 
 // All not listed are seemingly never used.
@@ -688,7 +689,7 @@ struct BattleUnitPartsWork {
     .0x060 = vector3 PartsScale;
     .0x06c = vector3 PartsBaseScale;
     
-    .0x0bd = int8 ?  // something position-related?
+    .0x0bd = int8  // face_direction / attack direction
     
     .0x170 = vector3 ?  // assigned from parts.0x18
     .0x17c = vector3 ?  // unknown
@@ -798,7 +799,7 @@ struct BattleUnitWork {
     
     .0x144 = StatusVulnerability* status_vulnerability;
     
-    .0x189 = int8 face_direction;
+    .0x189 = int8 face_direction;  // also attack direction
     
     .0x1fc ~ .0x20f = ? "HpGauge"-related
     
@@ -895,9 +896,12 @@ struct NpcWork {
 struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x00000 = int16 turn_count;
     .0x00004 = int32 ? // has to do with BattleSetSeq(TLBI, 0, ...)
-    .0x0000a = int8, something related to direction / alliance?
-    .0x00012 = int8, something related to other direction / alliance?
     
+    // Information for Player, Enemy, Neutral (Bomb-Squad, etc.?) alliances:
+    // .0x0 = int16 identifier - 2 for player, 1 for enemy, 0 for neutral
+    // .0x2 = int8 attack_direction - 1 for player/neutral, -1 for enemy
+    // .0x4 = uint32 clear_condition_met - for player/enemy, 1 if loss condition met
+    .0x00008 ~ .0x0001f = BattleAllianceWork[3] alliance_information;
     .0x00020 ~ .0x0011f = BattleUnitWork*[64] battle_units;
     .0x00120 ~ .0x0021f = int32[64] move_priority_queue;  // unit id
     .0x00220 ~ .0x0041f = int32[2] [64] phase_evt_queue;  // unit id, priority
@@ -1337,7 +1341,7 @@ struct BattleTargetWork {
     .0xabc = int32 attacker_enemy_belong;
     .0xac0 = AttackTargetClass_Flags attack_target_flags_hi;
     .0xac4 = AttackTargetProperty_Flags attack_target_flags_lo;
-    .0xac8 = int32 attack_direction?  // -1 or 1, from what I can tell
+    .0xac8 = int32 attacking_direction;  // -1 or 1, determines front-back order
 } [size = ???]
 
 struct BattleTargetInfoWork {
