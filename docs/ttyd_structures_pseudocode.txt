@@ -470,9 +470,9 @@ struct BattlePartySlotInfo ("EnemySlotData", "BattleUnitEntry") {
     .0x08 = int32 attack_phase;  // seemingly always 0x400'0004 for enemies
     .0x0c = vector3 position;
     .0x18 = uint32 ?
-    .0x1c ~ .0x1e = ?
-    .0x1f = bool ?  // related to different starting form; e.g. broom Magikoopas
-    .0x20 ~ .0x2b = ?
+	// defaults for various parameters specific to the enemy used in scripts;
+	// e.g. UW(0) = alternate forms for Buzzies, Magikoopas, SQ...
+	.0x1c ~ .0x2b = uint32 battle_unit_work[4];
     .0x2c ~ .0x2f = ItemDropData* item_drop_table;  // zero-terminated
 } [size = 0x30]
 
@@ -803,7 +803,8 @@ struct BattleUnitWork {
     
     .0x1fc ~ .0x20f = ? "HpGauge"-related
     
-    .0x218 ~ .0x227 = // assigned from BattlePartySlotInfo 0x1c ~ 0x2b
+    // initialized from BattlePartySlotInfo 0x1c ~ 0x2b
+    .0x218 ~ .0x227 = uint32 battle_unit_work[4];
     
     .0x258 = currently_targeted_parts?
     
