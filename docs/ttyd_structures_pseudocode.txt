@@ -803,9 +803,9 @@ struct BattleUnitWork {
     
     .0x1fc ~ .0x20f = ? "HpGauge"-related
     
-    // initialized from BattlePartySlotInfo 0x1c ~ 0x2b
-    .0x218 ~ .0x227 = uint32 battle_unit_work[4];
-    
+	// various parameters referenced as "UnitWork" in scripts;
+    // first four initialized from BattlePartySlotInfo 0x1c ~ 0x2b
+    .0x218 ~ .0x257 = uint32 battle_unit_work[16];
     .0x258 = currently_targeted_parts?
     
     .0x278 = uint32? damage_code;
