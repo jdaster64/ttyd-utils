@@ -1049,6 +1049,7 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     
     // Likely (IMO) the remnant of some battle debugging functionality.
     // 1 = force trigger object fall
+    // 2 = force trigger object to hit audience
     // 0x10 = force trigger A1 bg fall
     // 0x20 = force trigger A2 bg fall
     // 0x40 = force trigger B bg fall
