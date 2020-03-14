@@ -14,10 +14,18 @@ import jdalibpy.flags as flags
 import ttyd_maplib
 
 FLAGS = flags.Flags()
+# Filepath to a file in the format of REPO/resources/ttyd_*_symboldiffs_*.csv.
 FLAGS.DefineString("input_diffs", "")
+# Filepattern matching RAM dumps from every area in the game, named by their
+# internal area code (e.g. "aji" = X-Naut fortress), with the area replaced with
+# the wildcard *; Example: "path/to/file/*.raw"
 FLAGS.DefineString("input_ram_pattern", "")
+# Filepath to PistonMiner's ttydasm tool.
 FLAGS.DefineString("ttydasm_exe", "")
+# Filepattern matching ttydasm symbol files for every area in the game.
+# Can alternatively use a single file with no wildcard.
 FLAGS.DefineString("ttydasm_symbols_pattern", "")
+# Directory to output all script text files to.
 FLAGS.DefineString("output_dir", "")
 
 class ExportEventScriptsError(Exception):

@@ -14,9 +14,15 @@ import jdalibpy.flags as flags
 import ttyd_maplib as maplib
 
 FLAGS = flags.Flags()
+# Filepath to a file in the format of REPO/resources/ttyd_*_symboldiffs_*.csv.
 FLAGS.DefineString("input_diffs", "")
+# Filepattern matching RAM dumps from every area in the game, named by their
+# internal area code (e.g. "aji" = X-Naut fortress), with the area replaced with
+# the wildcard *; Example: "path/to/file/*.raw"
 FLAGS.DefineString("input_ram_pattern", "")
+# Directory to output all script text files to.
 FLAGS.DefineString("output_dir", "")
+# Toggles whether to output formatted data or the raw bytes of the class.
 FLAGS.DefineBool("use_raw_classes", False)
 
 # Text files with enemy and item IDs and names.

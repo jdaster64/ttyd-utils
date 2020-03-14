@@ -12,6 +12,7 @@ import pandas as pd
 import jdalibpy.flags as flags
 
 FLAGS = flags.Flags()
+# Filepath to a file in the format of REPO/resources/ttyd_*_symboldiffs_*.csv.
 FLAGS.DefineString("input_diffs", "")
 
 class TtydSymbolLibError(Exception):

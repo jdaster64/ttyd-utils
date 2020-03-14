@@ -14,9 +14,14 @@ import jdalibpy.flags as flags
 import ttyd_maplib
 
 FLAGS = flags.Flags()
+# Filepath to a file in the format of REPO/resources/ttyd_*_symboldiffs_*.csv.
 FLAGS.DefineString("input_diffs", "")
+# Filepath to a ttydasm symbol file to combine with the symbols generated from
+# the diffs file.
 FLAGS.DefineString("input_ttydasm_symbase", "")
+# Output directory for MAP files.
 FLAGS.DefineString("output_maps_dir", "")
+# Output directory for ttydasm symbol files.
 FLAGS.DefineString("output_ttydasm_maps_dir", "")
 
 class GenerateSymbolMapsError(Exception):
