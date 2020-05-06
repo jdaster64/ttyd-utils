@@ -506,6 +506,42 @@ struct BattleStageObjectData ("PropSlotData") {
     .0x16 ~ .0x17 = padding?
 } [size = 0x18]
 
+struct BattleStageNozzleData {
+    // 4 weights per jet turn state for changing direction;
+    // they're identical for all ranks except B-rank, for some reason.
+    // Not sure exactly how they're used (see _Nozzle_Change_Check).
+    .0x000 = int8[12] jet_turn_weights;
+    // Per Mario's rank:
+    // Rank 0 = 100, 0, 0, 0
+    // Rank 1 = 65, 35, 0, 0
+    // Rank 2 = 35, 25, 40, 0
+    // Rank 3 = 20, 20, 25, 35
+    // Types: none / fog, ice, explosion, fire
+    .0x00c = int8[4] jet_type_weights;
+    .0x010 = AttackParams[4] stage_jet_attack_params;
+} [size = 0x310]
+
+struct BattleStageFallObjectData {
+    .0x000 = AttackParams ceiling_fall_params;
+    // Per Mario's rank (all X's are a weight of 10)
+    // Rank 0 = 0X00 0000 X
+    // Rank 1 = XX00 0X00 X
+    // Rank 2 = XXXX XX00 X
+    // Rank 3 = XXXX XXXX X
+    // Types:
+    // 0 = basin
+    // 1 = bucket
+    // 2 = small bugs
+    // 3 = large bug
+    // 4 = fork
+    // 5 = water
+    // 6 = statue
+    // 7 = meteor
+    // 8 = ceiling light
+    .0x0c0 = uint8[9] object_type_weights;
+    .0x0cc = AttackParams[9] object_attack_params;
+} [size = 0x78c]
+
 struct BattleUnitClassParams {
     .0x00 = int32 unit_type;
     .0x04 = const char* unit_name;
@@ -532,8 +568,8 @@ struct BattleUnitClassParams {
     .0x74 ~ .0x87 = float[5] ? ("CutBaseOffset", "CutWidth", "CutHeight"?)
     .0x88 = int8 turn_order;  // only for "action" phase / attacks.
     .0x89 = int8 turn_order_variance;
-    .0x8a = int8 swallow_param (always -1 or 0; I think this controls the ability to be shot)
-    .0x8b = int8 swallow_attribute (always 2 or 0; not sure what this does separate from the above)
+    .0x8a = int8 swallow_chance;  // -1 makes attack completely fail
+    .0x8b = int8 swallow_attributes;  // 2 makes enemy able to be shot into another
     .0x8c = int8 ultra_hammer_knock_chance (always 100 or 0)
     .0x8d = int8 itemsteal_param (always 20 or 0)
     .0x8e ~ .0x9b = ? (unused?)
@@ -883,7 +919,7 @@ struct PouchPartyWork {
     .0x02 = int16 max_hp;
     .0x04 = int16 base_max_hp;
     .0x06 = int16 current_hp;
-    .0x08 = int16 party_attack_level;  // "PartyAttackLv"?
+    .0x08 = int16 hp_level;
     .0x0a = int16 attack_level;
     .0x0c = int16 tech_level;
 } [size = 0xe]
@@ -908,46 +944,24 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x00220 ~ .0x0041f = int32[2] [64] phase_evt_queue;  // unit id, priority
     .0x00420 = int32 active_unit_id;
     .0x00424 = int32 ?
-    .0x00428 ~ .0x00eef or later = BattleTargetWork target_work?  // unknown size
+    // Used as scratch space when determining / selecting valid targets for a move.
+    .0x00428 ~ .0x00ef3 = BattleTargetWork target_work;
     
+    // 0x2: Set during a First Strike?
     // 0x80: Disables audience spawning items? (May have other purposes)
     // 0x200: Mario is currently acting and has only the basic Jump move
     // 0x400: Mario is currently acting and has only the basic Hammer move
     // 0x40'0000: Show "Merlee curse has run out" sequence?
     .0x00ef4 = uint32 ?
     
-    // Battle sequence states 1-7 (#3 = turn, #4 = phase, #5 = subphase?)
-    .0x00f0c ~ .0x00f27 = int32[7] ? // have to do with BattleSetSeq
+    // BattleSetSeq states 1-7 (#3 = turn, #4 = phase, #5 = "move"/subphase, #6 = act)
+    .0x00f0c ~ .0x00f27 = int32[7] battle_sequences;
     .0x00f2c ~ .0x0171b = BattlePadWork pad_work[4];
-    .0x0171c ~ .0x01c5f or later  // BattleCommandDisplay_ActMenuMain work
+    // Data for command windows, etc.; may extend to 0x1c8f
+    .0x0171c ~ .0x01c5f or later = BattleWorkCommand* command_work;
     
-    // All part of BattleActionCommandManagerWork, starting at 0x1c90?
-    .0x01c90 = BattleUnitWork* ac_unit;
-    .0x01c94 = uint32 ac_setup_param_3?
-    .0x01c98 = uint32 ac_setup_param_4?
-    .0x01c9c = uint32 ac_state;  // 0 on setup, 100 on start, gen. 1000 on end?
-    // These function params are initialized from the ActionCommandList table:
-    .0x01ca0 = void* ac_main_function;
-    .0x01ca4 = void* ac_result_function;
-    .0x01ca8 = void* ac_disp_function;  // set only if not confused
-    .0x01cac = void* ac_delete_function;
-    .0x01cb0 = int32 ac_defense_result;
-    .0x01cb4 = int32 ac_result_count;  // 1+ if successful?
-    // .0x1cb8 == 1 (failure?) set in setup, & 2 = action command success
-    .0x01cb8 = uint32 ac_result;
-    .0x01cbc = int8 base_ac_difficulty?
-    .0x01cbd = int8 ac_difficulty;
-    .0x01cc0 ~ .0x01cc3 = uint32? ?
-    .0x01cc4 = uint32 ac_flag;
-    .0x01cc8 ~ .0x01ce7 = uint32[8] ac_params;  // AcSetParamAll
-    .0x01ce8 ~ ?        = uint32[?] ac_output_params;
-    .0x01d08 ~ .0x01d17 = uint32[4] ac_gauge_params;  // AcSetGaugeParam
-    .0x01d18 ~ .0x01d1b = uint32? ?
-    .0x01d1c ~ .0x01f17 = BattlePadWork ac_manager_pad_work;
-    // This space might be used for different purposes for different commands...
-    // It seems 0x1f20 ~ 0x174b and 0x174c ~ 0x177f... are treated differently
-    // for at least some action command functions.
-    .0x01f64 = float run_away_meter;
+    // Data for action command minigame variables, graphics, etc.
+    .0x01c90 ~ .0x0252b or later = BattleWorkActionCommandManager* ac_manager_work;
     
     .0x02738 ~ .0x02753 = BattleInformationWork battle_info_work;
     .0x02754 ~ .0x02857 = BattleCameraWork camera_work;
@@ -972,63 +986,7 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x16f38 ~ .0x16f5b = BattleActRecordWork act_record_work;
     .0x16f5c ~ .0x1715b = BattleAfterReactionWork[64] after_reaction_queue;
     .0x1715c ~ .0x180db = BattleStageObjectWork[32] stage_object_work;
-    
-    // .0x180dc ~ .0x182cb = Has to do with stage effects...
-    
-    .0x180f8 = uint8 stage_effects_allowed?  // 2,4,8,20 = !A1,!A2,!B,object
-    .0x180fc = uint32 ? related to A1 or B-destroying event id?
-    .0x18100 = uint32 ? related to A1-destroying event id?
-    .0x18104 = uint32 ? related to A2-destroying event id?
-    .0x18108 = uint32 ? related to B-destroying event id?
-    
-    // Size = 0x310; selected per Mario's rank.
-    // .0x000 = int8[12] 4 weights per jet turn state for changing direction;
-    // they're identical for all ranks except B-rank, for some reason.
-    // Not sure exactly what they end up doing (see _Nozzle_Change_Check).
-    // .0x00c = int8[4] jet_type_weights:
-    // Rank 0 = 100, 0, 0, 0
-    // Rank 1 = 65, 35, 0, 0
-    // Rank 2 = 35, 25, 40, 0
-    // Rank 3 = 20, 20, 25, 35
-    // Types: none / fog, ice, explosion, fire
-    // .0x010 = AttackParams[4] stage_jet_attack_params;
-    .0x18110 = BattleStageNozzleData* nozzle_data;
-    // Size = 0x78c; selected per Mario's rank.
-    // .0x000 = AttackParams ceiling_fall_params;
-    // .0x0c0 = uint8[9] object_type_weights:
-    // Rank 0 = 0X00 0000 X
-    // Rank 1 = XX00 0X00 X
-    // Rank 2 = XXXX XX00 X
-    // Rank 3 = XXXX XXXX X
-    // Types:
-    // 0 = basin
-    // 1 = bucket
-    // 2 = small bugs
-    // 3 = large bug
-    // 4 = fork
-    // 5 = water
-    // 6 = statue
-    // 7 = meteor
-    // 8 = ceiling light
-    // .0x0cc = AttackParams[9] object_attack_params;
-    .0x18114 = BattleStageFallObjectData* fall_object_data;
-    
-    // Used for constructing attacks for stage jets, maybe others.
-    .0x18120 = AttackParams[2] temp_attack_params;
-    .0x182a0 = int8[3] stage_jet_face_directions;
-    .0x182a3 = int8[3] stage_jet_changing_face_directions;
-    .0x182a6 = int8 current_stage_jet_type;
-    .0x182a7 = ? padding, probably
-    .0x182a8 = uint32 stage_jet_change_event_id?
-    .0x182ac = ?
-    .0x182b0 = ?
-    .0x182b4 = uint32 stage_jet_fire_event_id;
-    .0x182b8 = ?? related to stage jets / fog?
-    .0x182bc = int32 fog_active;
-    .0x182c0 = ?
-    .0x182c4 = uint32 ceiling_fall_event_id;
-    .0x182c8 = uint32 object_fall_event_id;
-    
+    .0x180dc ~ .0x182cb = BattleWorkStageHazards stage_hazard_work;
     .0x182cc ~ .0x18c8b = BattleIconWork icon_work;
     
     .0x18da0 ~ .0x18ff7 = BattleStatusChangeMsgWork status_change_msg_work;
@@ -1060,7 +1018,7 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     // 0x20000 = trigger audience item frenzy
     // 0x40000 = force Luigi to appear at beginning of fight
     // 0x80000 = force trigger bingo card (.0x1908c = card to force)?
-    .0x19078 = uint32 ?
+    .0x19078 = uint32 debug_event_triggers?
     
     .0x19088 = int?? force_monotype_audience;
     .0x1908c = int?? bingo_card_type_to_force;
@@ -1104,7 +1062,44 @@ struct BattleActRecordWork {
 } [size = 0x24]
 
 struct BattleActionCommandManagerWork {
-} [size = ???]
+    // All part of BattleActionCommandManagerWork, starting at 0x1c90?
+    .0x000 = BattleUnitWork* ac_unit;
+    .0x004 = uint32 ac_setup_param_3?
+    .0x008 = uint32 ac_setup_param_4?
+    .0x00c = uint32 ac_state;  // 0 on setup, 100 on start, gen. 1000 on end?
+    // These function params are initialized from the ActionCommandList table:
+    .0x010 = void* ac_main_function;
+    .0x014 = void* ac_result_function;
+    .0x018 = void* ac_disp_function;  // set only if not confused
+    .0x01c = void* ac_delete_function;
+    .0x020 = int32 ac_defense_result;
+    .0x024 = int32 ac_result_count;  // 1+ if successful?
+    // .0x028 == 1 (failure?) set in setup, & 2 = action command success
+    .0x028 = uint32 ac_result;
+    .0x02c = int8 base_ac_difficulty?
+    .0x02d = int8 ac_difficulty;
+    .0x030 ~ .0x033 = uint32? ?
+    .0x034 = uint32 ac_flag;
+    .0x038 ~ .0x057 = uint32[8] ac_params;  // AcSetParamAll
+    .0x058 ~ ?      = uint32[?] ac_output_params;
+    .0x078 ~ .0x087 = uint32[4] ac_gauge_params;  // AcSetGaugeParam
+    .0x088 ~ .0x08b = uint32? ?
+    .0x08c ~ .0x287 = BattlePadWork ac_manager_pad_work;
+    .0x288 ~ .0x28f = ?
+    // Unknown, reset at the start of many action commands and seemingly
+    // related to display functions. 
+    .0x290 ~ .0x2bb = BattleWorkActionCommandDispParams? ac_disp_params?
+    // Used differently across a number of action commands.
+    .0x2bc ~ .0x89b = BattleWorkActionCommandParams? ac_params?
+} [size = 0x89c or more]
+
+struct BattleWorkActionCommandDispParams {
+} [size = 0x2c]
+
+struct BattleWorkActionCommandParams {
+    // Only used for certain action commands.
+    .0x018 = float run_away_meter;
+} [size = 0x5e0 or more]
 
 struct BattleAfterReactionWork {
 } [size = 0x8]
@@ -1274,6 +1269,9 @@ struct BattleBreakSlotWork {
 struct BattleCameraWork {
 } [size = 0x104]
 
+struct BattleWorkCommand {
+} [size = 0x544 or more]
+
 struct BattleIconWork {
 } [size = 0x9c0]
 
@@ -1334,6 +1332,34 @@ struct BattleStageWork {
 struct BattleStatusChangeMsgWork {
 } [size = 0x258]
 
+struct BattleWorkStageHazards {
+    .0x01c = uint8 stage_effects_allowed?  // 2,4,8,20 = !A1,!A2,!B,object
+    .0x020 = uint32 ? related to A1 or B-destroying event id?
+    .0x024 = uint32 ? related to A1-destroying event id?
+    .0x028 = uint32 ? related to A2-destroying event id?
+    .0x02c = uint32 ? related to B-destroying event id?
+    
+    // Selected by Mario's rank.
+    .0x034 = BattleStageNozzleData* nozzle_data;
+    .0x038 = BattleStageFallObjectData* fall_object_data;
+    
+    // Used for constructing attacks for stage jets, maybe others.
+    .0x044 = AttackParams[2] temp_attack_params;
+    .0x1c4 = int8[3] stage_jet_face_directions;
+    .0x1c7 = int8[3] stage_jet_changing_face_directions;
+    .0x1ca = int8 current_stage_jet_type;
+    .0x1cb = ? padding, probably
+    .0x1cc = uint32 stage_jet_change_event_id?
+    .0x1d0 = ?
+    .0x1d4 = ?
+    .0x1d8 = uint32 stage_jet_fire_event_id;
+    .0x1dc = ?? related to stage jets / fog?
+    .0x1e0 = int32 fog_active;
+    .0x1e4 = ?
+    .0x1e8 = uint32 ceiling_fall_event_id;
+    .0x1ec = uint32 object_fall_event_id;
+} [size = 0x1f0]
+
 struct BattleTargetWork {
     .0x000 = AttackParams* attack;
     .0x004 ~ .0xa6b = BattleTargetInfoWork[74] target_info;
@@ -1344,7 +1370,7 @@ struct BattleTargetWork {
     .0xac0 = AttackTargetClass_Flags attack_target_flags_hi;
     .0xac4 = AttackTargetProperty_Flags attack_target_flags_lo;
     .0xac8 = int32 attacking_direction;  // -1 or 1, determines front-back order
-} [size = ???]
+} [size = 0xacc]
 
 struct BattleTargetInfoWork {
     .0x00 = int16 unit_index;
