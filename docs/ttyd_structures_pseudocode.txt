@@ -844,6 +844,7 @@ struct BattleUnitWork {
     .0x218 ~ .0x257 = uint32 battle_unit_work[16];
     .0x258 = currently_targeted_parts?
     
+    .0x274 = uint32 after_hit_effect;  // generally from AttackParams.0x6d
     .0x278 = uint32? damage_code;
     .0x27c = BattleUnitTokens 0x27c_flags;
     
