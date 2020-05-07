@@ -319,10 +319,11 @@ struct BattleSetupData {
     // Determines audience composition on initialization...
     // Usually 0, with the following exceptions:
     // 2: Magnus von Grapple (X-Nauts and Punis only)
-    // 3: Red Bones in Hooktail's castle, Hooktail
+    // 3: Red Bones in Hooktail's castle, Hooktail (full audience)
     // 5: Grodus (X-Nauts only)
     // 6: Grubba, Doopliss[2], Cortez, Smorg, Magnus 2.0, Shadow Sirens (Ch.8), 
     //    Gloomtail, Bowser (Ch. 8), Shadow Queen (both phases), epilogue battle
+    //    (full audience, mixed types)
     .0x1c = special_audience_modes;
     
     // Contains minimum and maximum weights for audience types:
@@ -1362,7 +1363,7 @@ struct BattleWorkStageHazards {
     .0x1d0 = ?
     .0x1d4 = ?
     .0x1d8 = uint32 stage_jet_fire_event_id;
-    .0x1dc = ?? related to stage jets / fog?
+    .0x1dc = int32 fog_turn_count;
     .0x1e0 = int32 fog_active;
     .0x1e4 = ?
     .0x1e8 = uint32 ceiling_fall_event_id;
