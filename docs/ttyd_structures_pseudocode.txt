@@ -2038,6 +2038,10 @@ struct CounterattackResult {
 // things; PistonMiner has far better documentation.
 struct marioSt ("GameGlobals") {
     .0x0048 = int64_t local_time? (40.5M ticks/sec)
+    // 0x1000, 0x2000, 0x4000, 0x8000 = has gotten grand, 2nd-4th prizes
+    // (on this pick or overall?)
+    // Lower flags used for other purposes, perhaps tracking cheating?
+    .0x00a8 = int16_t hll_flags;
     .0x00b0 = int64_t local_time_hll_sign_last_read;
     .0x00b8 = int16_t last_hll_sign_number_read;
     .0x00c0 = int64_t local_time_hll_pick_last_received;
@@ -2053,4 +2057,4 @@ struct marioSt ("GameGlobals") {
     .0x0178 = char gswfData[1024];
     .0x0578 = char gswData[2048];  // Pit of 100 trials floor = .0xaa1
     ...
-} [size = 0x4000]
+} [size = 0x13d8]
