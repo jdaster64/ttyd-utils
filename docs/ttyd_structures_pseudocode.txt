@@ -769,7 +769,7 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x00000 = int16 turn_count;
     .0x00004 = int32 ? // has to do with BattleSetSeq(TLBI, 0, ...)
     .0x00008 ~ .0x0001f = BattleWorkAlliance[3] alliance_information;
-    .0x00020 ~ .0x0011f = BattleUnit*[64] battle_units;
+    .0x00020 ~ .0x0011f = BattleWorkUnit*[64] battle_units;
     .0x00120 ~ .0x0021f = int32[64] move_priority_queue;  // unit id
     .0x00220 ~ .0x0041f = int32[2] [64] phase_evt_queue;  // unit id, priority
     .0x00420 = int32 active_unit_id;
@@ -863,14 +863,14 @@ struct BattleWorkAlliance {
     .0x4 = uint32 clear_condition_met;
 } [size = 0x8]
 
-struct BattleUnit {
+struct BattleWorkUnit {
     .0x000 = int32 unit_id;
     .0x004 = ? (also unit_kind?)
     .0x008 = BattleUnitType(int32) unit_kind;
     .0x00c = int8 alliance;
     .0x00d = int8 level;
     .0x010 = BattleUnitKind* unit_kind_params;
-    .0x014 = BattleUnitPart* parts;
+    .0x014 = BattleWorkUnitPart* parts;
     .0x018 = void* data_table;
     .0x01c = uint32 unit_flags? // btlevtcmd_OffUnitFlag, etc.
     .0x020 = int8 move_state?
@@ -982,14 +982,14 @@ struct BattleUnit {
     
     .0x2d8 = const char* // something to do with GetPoseNameFromType(..., 0x41)
     .0x2dc = const char* // something to do with GetPoseNameFromType(..., 0x2b)
-    .0x2e0 = BattleUnitBadgesEquipped badges_equipped;
+    .0x2e0 = BattleWorkUnitBadgesEquipped badges_equipped;
     .0x308 = int32 held_item;
     
     .0x348 ~ .0xae7 = ? "BattleStatusIcon"-related
     .0xae8 ~ .0xb2f = ? "BattleStatusChangeInfoWork"-related
 } [ size = 0xb34 ]
 
-struct BattleUnitBadgesEquipped {
+struct BattleWorkUnitBadgesEquipped {
     .0x00 = close_call;
     .0x01 = pretty_lucky;
     .0x02 = lucky_day;
@@ -1032,8 +1032,8 @@ struct BattleUnitBadgesEquipped {
     .0x27 = auto_command_badge;
 } [size = 0x28]
 
-struct BattleUnitPart {
-    .0x000 = BattleUnitPart* next_part;
+struct BattleWorkUnitPart {
+    .0x000 = BattleWorkUnitPart* next_part;
     .0x004 = BattleUnitKindPart* kind_part_params;
     
     .0x024 = vector3 ?  // assigned from parts.0x0c
@@ -1062,7 +1062,7 @@ struct BattleUnitPart {
     
     .0x2d4 = BattleUnitKindPart* // kind_part.index if status_flags & 1
     
-    .0x4ec = BattleUnit* battle_unit_owner;
+    .0x4ec = BattleWorkUnit* battle_unit_owner;
 } [ size = 0x500 ]
 
 struct BattleWorkActRecord {
@@ -1103,7 +1103,7 @@ struct BattleWorkActRecord {
 } [size = 0x24]
 
 struct BattleWorkActionCommandManager {
-    .0x000 = BattleUnitWork* ac_unit;
+    .0x000 = BattleWorkUnit* ac_unit;
     .0x004 = uint32 ac_setup_param_3?
     .0x008 = uint32 ac_setup_param_4?
     .0x00c = uint32 ac_state;  // 0 on setup, 100 on start, gen. 1000 on end?
