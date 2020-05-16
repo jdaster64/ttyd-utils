@@ -1391,7 +1391,8 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     // Data for action command minigame variables, graphics, etc.
     .0x01c90 ~ .0x0252b or later = BattleWorkActionCommandManager ac_manager_work;
     
-    .0x02738 ~ .0x02753 = BattleWorkResultInformation battle_result_info_work;
+    .0x02738 = BattleWorkResultInformation* fbat_info_work;
+
     .0x02754 ~ .0x02857 = BattleWorkCamera camera_work;
     .0x02858 ~ .0x1616b = BattleWorkAudience audience_work;
     .0x1616c ~ .0x1629f = BattleWorkBreakSlot bingo_work;
