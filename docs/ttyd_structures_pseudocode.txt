@@ -104,11 +104,12 @@ enum BattleUnitAttribute_Flags {
     0x2 = OutOfReach (generally on ceiling)
     0x4 = Unquakeable (aerial / hovering)
     0x8 = causes non-unmissable attacks to auto-miss?
-    0x10 = causes non-unmissable attacks to auto-miss?
+    0x10 = Veiled (w/Vivian)
     0x20 = counters (unused?) AttackTargetProperty 0x200'0000?
     0x1000, 0x2000 = ? (used by "tree", "switch", System actors)
     0x20000 = inactive?
     0x200'0000 = counters (unused?) AttackTargetProperty 0x400'0000?
+    0x4000'0000 = ShowHpGauge
 }
 
 // "Token"; e.g. btlevtcmd_OnToken
@@ -869,7 +870,7 @@ enum StatusEffectType {
     14 = DefenseUp
     15 = DefenseDown
     16 = Charge
-    17 = ???
+    17 = Flipped?  // for shell enemies, etc.
     18 = Invisible
     19 = Fast
     20 = Slow
@@ -1048,23 +1049,30 @@ struct BattleUnitKind {
     .0x12 = int8 base_coin;
     .0x13 = int8 run_rate;
     .0x14 = int16 pb_soft_cap;
-    .0x16 ~ .0x1d = int16[4] ?
+    .0x16 = int16 width;
+    .0x18 = int16 height;
+    .0x1a = int16[2] hit_offset;
     .0x1e ~ .0x1f = padding?
-    .0x20 = vector3 ?
-    .0x2c = int16[2] ?
+    .0x20 = vector3 center_offset;
+    .0x2c = int16[2] hp_gauge_offset;
     .0x30 = vector3 ???
-    .0x3c = vector3 ?
-    .0x48 ~ .0x5b = float[5] ???
-    .0x5c = vector3 ?
-    .0x68 = vector3 ?
-    .0x74 ~ .0x87 = float[5] ? ("CutBaseOffset", "CutWidth", "CutHeight"?)
+    .0x3c = vector3 held_item_base_position?
+    .0x48 = vector3 burn_flame_offset;  // BSE_Fire()
+    .0x54 = float?
+    .0x58 = float?
+    .0x5c = vector3 binta_hit_offset;  // love slap?
+    .0x68 = vector3 kiss_hit_offset;  // lip lock?
+    .0x74 = vector3 cut_base_offset;
+    .0x80 = float cut_width;
+    .0x84 = float cut_height;
     .0x88 = int8 turn_order;  // only for "action" phase / attacks.
     .0x89 = int8 turn_order_variance;
     .0x8a = int8 swallow_chance;  // -1 makes attack completely fail
     .0x8b = int8 swallow_attributes;  // 2 makes enemy able to be shot into another
     .0x8c = int8 ultra_hammer_knock_chance (always 100 or 0)
     .0x8d = int8 itemsteal_param (always 20 or 0)
-    .0x8e ~ .0x9b = ? (unused?)
+    .0x8e ~ .0x8f = padding?
+    .0x90 = vector3 star_point_disp_offset;
     .0x9c = damaged_sfx_name;
     .0xa0 = const char* fire_damage_sfx_name;
     .0xa4 = const char* ice_damage_sfx_name;
@@ -1075,17 +1083,17 @@ struct BattleUnitKind {
     .0xb5 ~ .0xb7 = padding?
     .0xb8 = BattleUnitKindPart* parts;  // non null-terminated
     .0xbc = EventScript* init_script;
-    .0xc0 = // DataTable* data_table;
+    .0xc0 = void* // DataTable* data_table;
 } [size = 0xc4]
 
 struct BattleUnitKindPart {
     .0x00 = int32 index;  // one-indexed
     .0x04 = const char* name;
     .0x08 = const char* model_name?
-    .0x0c = vector3 ?
-    .0x18 = vector3 ?
-    .0x24 = vector3 ?
-    .0x30 = int16 ?
+    .0x0c = vector3 part_offset_pos;
+    .0x18 = vector3 part_hit_base_pos?
+    .0x24 = vector3 part_hit_cursor_base_pos?
+    .0x30 = int16 ? (some sort of scale?)
     .0x32 = int16 ?
     .0x34 = int16 ? (always 255?)
     .0x36 ~ .0x37 = padding?
@@ -1094,7 +1102,7 @@ struct BattleUnitKindPart {
     .0x3c = BattleUnitDefenseAttr* default_defense_attr;
     .0x40 = PartsAttribute_Flags default_status_flags;
     .0x44 = PartsCounterAttribute_Flags default_property_flags;
-    .0x48 = // PoseTable* default_pose_table;
+    .0x48 = void* // PoseTable* default_pose_table;
 } [size = 0x4c]
 
 struct BattleUnitDefense {
@@ -1161,6 +1169,7 @@ struct BattleWeapon {
     
     // Special on/after-hit effects:
     // 0x00 - None
+    // 0x04 - Related to failed Gulp?
     // 0x05 - Knocked onto ground (used w/Gulp)
     // 0x06 - Knocked into next target (used w/Gulp)
     // 0x08 - Used for shell attacks, unknown use
@@ -1176,7 +1185,7 @@ struct BattleWeapon {
     // 0x17, 0x18 - Quickly spin (used w/Love Slap)
     // 0x19 - Blown away (like Gale Force); only happens if killed
     // 0x1b - Used by a few miscellaneous attacks, unknown use
-    .0x6d = int8 after_hit_effect;
+    .0x6d = int8 damage_effect;
     .0x6e = int8 weapon_ac_level;  // Base difficulty; Always 3 by default?
     .0x6f = int8 ?  // Always 2, seemingly unused; perhaps was a "Nice"-esque default reward.
     .0x70 = const char* ac_message;  // msg_ac_...
@@ -1266,7 +1275,7 @@ struct ItemData {
     .0x1c = int8 bp_cost;
     .0x1d = int8 hp_restored;
     .0x1e = int8 fp_restored;
-    .0x1f = int8 padding?
+    .0x1f = int8 sp_restored?  // Referenced by btlevtcmd_GetItemRecoverParam
     .0x20 = int16 icon_id;  // Zephiles
     .0x22 = int16 padding?
     .0x24 = BattleWeapon* weapon_params;
@@ -1371,32 +1380,47 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x00120 ~ .0x0021f = int32[64] move_priority_queue;  // unit id
     .0x00220 ~ .0x0041f = int32[2] [64] phase_evt_queue;  // unit id, priority
     .0x00420 = int32 active_unit_id;
-    .0x00424 = int32 ?
+    .0x00424 = int32 unknown_unit_id;  // BattleTransId -6
     // Used as scratch space when determining / selecting valid targets for a move.
     .0x00428 ~ .0x00ef3 = BattleWorkWeaponTargets weapon_targets_work;
-    
     // 0x2: Set during a First Strike?
     // 0x80: Disables audience spawning items? (May have other purposes)
     // 0x200: Mario is currently acting and has only the basic Jump move
     // 0x400: Mario is currently acting and has only the basic Hammer move
     // 0x40'0000: Show "Merlee curse has run out" sequence?
-    .0x00ef4 = uint32 ?
-    
-    // BattleSetSeq states 1-7 (#3 = turn, #4 = phase, #5 = "move"/subphase, #6 = act)
-    .0x00f0c ~ .0x00f27 = int32[7] battle_sequences;
+    .0x00ef4 = uint32 unknown flags  // "onoff_battleflag"
+    .0x00ef8 = uint32 unknown flags
+    .0x00efc = uint32 ?
+    .0x00f00 = int32 stored_exp;
+    .0x00f04 = int32 stored_exp_displayed;
+    .0x00f08 = int32 stored_exp_displayed_inc_anim_timer;
+    // BattleSetSeq states 1-7
+    .0x00f0c = int32 init_seq;
+    .0x00f10 = int32 first_act_seq;
+    .0x00f14 = int32 turn_seq;
+    .0x00f18 = int32 phase_seq;
+    .0x00f1c = int32 move_seq;
+    .0x00f20 = int32 act_seq;
+    .0x00f24 = int32 end_seq;
+    .0x00f28 = void* battle_end_work;  // ptr to struct of length 0x2ac
     .0x00f2c ~ .0x0171b = BattleWorkPad pad_work[4];
-    // Data for command windows, etc.; may extend to 0x1c8f
-    .0x0171c ~ .0x01c5f or later = BattleWorkCommand command_work;
-    
+    // Data for command windows, etc.
+    .0x0171c ~ .0x01c8f = BattleWorkCommand command_work;
     // Data for action command minigame variables, graphics, etc.
-    .0x01c90 ~ .0x0252b or later = BattleWorkActionCommandManager ac_manager_work;
-    
+    .0x01c90 ~ .0x02737 = BattleWorkActionCommandManager ac_manager_work;
     .0x02738 = BattleWorkResultInformation* fbat_info_work;
-
+    // 0x0273c = related to epilogue battle?
+    // 0x02740 = related to tutorial?
+    // 0x02744 = int32 BattleStatusWindowSystem enabled?
+    // 0x02748 = int32 BattleStatusWindowEvent enabled?
+    // 0x0274c = int32 BattleStatusWindowAPRecovery enabled?
+    .0x0273c ~ .0x0274f // related to BattleStatusWindowCheck
+    .0x02750 ~ .0x02753 = ? (unused?)
     .0x02754 ~ .0x02857 = BattleWorkCamera camera_work;
     .0x02858 ~ .0x1616b = BattleWorkAudience audience_work;
     .0x1616c ~ .0x1629f = BattleWorkBreakSlot bingo_work;
     .0x162a0 ~ .0x163d3 = BattleWorkPartyInfo[7] party_info_work;
+    
     // Set if given badges are equipped.
     // 0x134 = 1
     // 0x135 = 2
@@ -1409,7 +1433,7 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     // 0x13d = 0x800
     // 0x13e = 0x200
     // 0x13f = 0x1000
-    .0x163d4 = uint32 badge_equipped_flags;
+    .0x163f4 = uint32 badge_equipped_flags;
     
     .0x163fc ~ .0x16f37 = BattleWorkStage stage_work;
     .0x16f38 ~ .0x16f5b = BattleWorkActRecord act_record_work;
@@ -1429,6 +1453,7 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x19005 = int8 // copied from attack params 0x19
     .0x19006 = int8 // copied from attack params 0x1a
     .0x19007 = int8 // copied from attack params 0x1b if stylish successful
+    .0x19008 = char* weapon_ac_help_msg;  // from attack params 0x70
     
     .0x19060 = int32[4] reserve_items;  // BattleConsumeReserveItem
     
@@ -1468,6 +1493,7 @@ struct BattleWorkUnit {
     .0x008 = BattleUnitType(int32) unit_kind;
     .0x00c = int8 alliance;
     .0x00d = int8 level;
+    .0x00e = int8 group_setup_index;  // index in BattleGroupSetup.
     .0x010 = BattleUnitKind* unit_kind_params;
     .0x014 = BattleWorkUnitPart* parts;
     .0x018 = void* data_table;
@@ -1486,25 +1512,27 @@ struct BattleWorkUnit {
     .0x030 = vector3 HomePos;
     .0x03c = vector3 Pos;
     .0x048 = vector3 OffsetPos;
-    
+    .0x054 = vector3 DispOffset;
     .0x060 = vector3 BaseRotate;
     .0x06c = vector3 Rotate;
     .0x078 = vector3 RotateOffset;
-    
-    .0x084 = vector3?  // assigned from class_params.0x20; center offset?
-    
+    .0x084 = vector3 CenterOffset;
     .0x090 = vector3 Scale;
     .0x09c = vector3 BaseScale;
-    
-    .0x0b4 = vector3?  // assigned from class_params.0x3c
+    .0x0a8 = ?
+    .0x0ac = vector3 toge_offset?
+    .0x0b4 = vector3 held_item_base_position?
     .0x0c0 = vector3 possession_item_offset;
-    .0x0cc ~ .0x0d3 = int16[4]?  // assigned from class_params.0x16
-    .0x0d4 ~ .0x0d7 = int16[2]?  // assigned from class_params.0x2c
-    .0x0d8 ~ .0x0eb = float[5]?  // assigned from class_params.0x74; cut base offset?
-    .0x0ec = vector3?  // assigned from class_params.0x5c; "binta" hit offset?
-    .0x0f8 = vector3?  // assigned from class_params.0x68; kiss hit offset?
-    
-    .0x104 = BattleUnitAttribute_Flags 0x104_flags;
+    .0x0cc = int16 width;
+    .0x0ce = int16 height;
+    .0x0d0 = int16[2] status_icon_offset;
+    .0x0d4 = int16[2] hp_gauge_offset;
+    .0x0d8 = vector3 CutBaseOffset;
+    .0x0e0 = float CutWidth;
+    .0x0e4 = float CutHeight;
+    .0x0ec = vector3 BintaHitOffset;  // Love Slap?
+    .0x0f8 = vector3 KissHitOffset;  // Lip Lock?
+    .0x104 = BattleUnitAttribute_Flags attribute_flags;
     .0x108 = int16 max_hp;
     .0x10a = int16 base_max_hp;  // no badges
     .0x10c = int16 current_hp;
@@ -1531,8 +1559,7 @@ struct BattleWorkUnit {
     .0x128 = int8 defense_change_strength;
     .0x129 = int8 charge_strength;
     .0x12a = int8 allergic_turns;
-    // If nonzero, player characters don't get the battle menu options?
-    .0x12b = int8 status_17_strength?
+    .0x12b = int8 flipped_turns;  // for shelled enemies, etc.
     .0x12c = int8 invisible_turns;
     .0x12d = int8 payback_turns;
     .0x12e = int8 hold_fast_turns;
@@ -1543,47 +1570,105 @@ struct BattleWorkUnit {
     .0x133 = int8 fp_regen_turns;
     .0x134 = int8 fp_regen_strength;
     .0x135 = int8 ohko_strength?
-    
     // 0x1 = CanAct
     // 0x1000'0000 = InDanger
     // 0x2000'0000 = InPeril
     .0x138 = uint32 status_flags;
     
+    .0x140 = uint32 protect_unit_idx? // SetGuard / GetProtectId; shell shield?
     .0x144 = StatusVulnerability* status_vulnerability;
-    
+    .0x148 = vector3 MoveStartPos;
+    .0x154 = vector3 MoveCurrentPos;
+    .0x160 = vector3 MoveTargetPos;
+    .0x16c = uint32 ?  // referenced in "JumpSetting"
+    .0x170 = float move_speed;
+    .0x174 = float fall_accel;
+    .0x178 = float jump_speed;
+    .0x17c = // float move_angle?
+    .0x180 = // used in MarioJumpPosition
+    .0x184 = // used in MarioJumpPosition
+    .0x188 = int8 move_direction;
     .0x189 = int8 face_direction;  // also attack direction
-    
-    .0x1fc ~ .0x20f = ? "HpGauge"-related
-    
+    // Used in MoveSoundDataWork, LoadSeMode; params copied from .0x1c4 ~ .0x1f9
+    .0x18c ~ .0x1a7 = ? 
+    .0x1a8 = // used in MarioJumpPosition
+    .0x1ac = ?
+    .0x1b0 = // used in MarioJumpPosition
+    .0x1b4 = // used in MarioJumpPosition
+    .0x1b8 = // used in MarioJumpPosition
+    .0x1bc = // used in MarioJumpPosition
+    .0x1c0 = ?
+    // Sound information for specific actions:
+    // .0x1c4~cb = uint32,32 from "SetJumpSound"
+    // .0x1cc~d9 = uint32,32,16,16,16 from "SetRunSound"
+    // .0x1dc~e9 = uint32,32,16,16,16 from "SetWalkSound"
+    // .0x1ec~f9 = uint32,32,16,16,16 from "SetDiveSound"
+    .0x1c4 ~ .0x1f9 = ? 
+    .0x1fc ~ .0x217 = ? "HpGauge"-related
     // various parameters referenced as "UnitWork" in scripts;
     // first four initialized from BattleUnitSetup.0x1c ~ 0x2b
     .0x218 ~ .0x257 = uint32 battle_unit_work[16];
-    .0x258 = currently_targeted_parts?
-    
-    .0x274 = uint32 after_hit_effect;  // generally from BattleWeapon.0x6d
+    // .0x258 ~ .0x287 seem to all be used during a single "act" (attack).
+    .0x258 = BattleWorkUnitPart* currently_targeted_part;  // set on target unit
+    .0x260 = int16 hp_damaging_hits_dealt;  // used for Power Bounce decay, etc.
+    .0x264 = int32 total_hp_damage_taken;
+    .0x268 = int32 total_fp_damage_taken;
+    .0x26c = int32 total_fp_lost;
+    .0x270 = int8 hp_damage_taken;
+    .0x271 = int8 fp_damage_taken; 
+    .0x272 = int8 fp_lost;  // min(.0x271, current fp at the time of hit)
+    .0x273 = int8 hits_taken;
+    .0x274 = uint32 damage_pattern;  // generally from BattleWeapon.0x6d
     .0x278 = uint32? damage_code;
     .0x27c = BattleUnitTokens 0x27c_flags;
-    
-    .0x28c = EventScript* wait_script;
-    .0x290 = int32 currently_executing_wait_script_id?
-    .0x294 = EventScript* unison_phase_script;
-    .0x298 = EventScript* phase_script;
-    .0x29c = int32 currently_executing_phase_script_id?
-    .0x2a0 = EventScript* attack_script;
-    .0x2a4 = EventScript* confuse_script;
-    .0x2a8 = int32 currently_executing_attack_script_id?
+    .0x280 = int32 hits_dealt_this_attack;  // used for Fire Drive decay, etc.
+    .0x284 = int32 total_damage_dealt_this_attack;  // used for HP/FP Drain
+    .0x288 = int32 init_event_id;
+    .0x28c = EventScript* wait_script_code;
+    .0x290 = int32 wait_event_id;
+    .0x294 = EventScript* unison_phase_script_code;
+    .0x298 = EventScript* phase_script_code;
+    .0x29c = int32 phase_event_id;
+    .0x2a0 = EventScript* attack_script_code;
+    .0x2a4 = EventScript* confuse_script_code;
+    .0x2a8 = int32 attack_event_id;
     .0x2ac = uint32  // battle menu state?
-    .0x2b0 = EventScript* damage_script;
-    .0x2b4 = int32 currently_executing_damage_script_id?
-    
-    .0x2c8 = EventScript* unknown_script;
-    .0x2cc = int32 currently_executing_unknown_script_id?
-    
-    .0x2d8 = const char* // something to do with GetPoseNameFromType(..., 0x41)
-    .0x2dc = const char* // something to do with GetPoseNameFromType(..., 0x2b)
+    .0x2b0 = EventScript* damage_script_code;
+    .0x2b4 = int32 damage_event_id;
+    .0x2b8 = EventScript* entry_script_code;
+    .0x2bc = int32 ?  // entry_event_id?
+    .0x2c0 = EventScript* ceiling_fall_script_code;
+    .0x2c4 = int32 ?  // ceiling_fall_event_id?
+    .0x2c8 = EventScript* unknown_script_code;
+    .0x2cc = int32 unknown_event_id;
+    .0x2d0 = EventScript* hit_script_code? // BattleRunHitEventDirect
+    .0x2d4 = uint32 talk_body_part_id;
+    .0x2d8 = const char* talk_pose_name;  // pose 0x41
+    .0x2dc = const char* stay_pose_name;  // pose 0x2b
     .0x2e0 = BattleWorkUnitBadgesEquipped badges_equipped;
     .0x308 = int32 held_item;
+    .0x30c = ItemDropData* held_item_table;
+    // referenced in btlDispMain, unknown purpose
+    .0x310 = int8 ?
+    .0x311 = int8 move_color_lv?
+    .0x312 = int8 ?
+    // referenced in BtlUnit_Delete, unknown purpose
+    .0x314 = void* // length 0x44 struct, has to do with unused UFO actor
+    .0x318 = code* // custom destructor?
+    .0x31c = void* ?
     
+    // BattleStatusEffect ...
+    .0x324 = void* sleep_eff;
+    .0x328 = void* fire_eff;
+    .0x32c = void* freeze_eff;
+    .0x330 = void* biribiri_eff;
+    .0x334 = void* // kagegakure-related (veil); tied to icon at .0x18?
+    // BSE_TurnFirstProcessEffectMain... (related to burn event)
+    .0x338 = int16 ?
+    .0x33a = int16 ?
+    .0x33c = int32 ?
+    .0x340 = float ?
+    .0x344 = void* fire_burn_eff?
     .0x348 ~ .0xae7 = ? "BattleStatusIcon"-related
     .0xae8 ~ .0xb2f = ? "BattleStatusChangeInfoWork"-related
 } [ size = 0xb34 ]
@@ -1634,34 +1719,73 @@ struct BattleWorkUnitBadgesEquipped {
 struct BattleWorkUnitPart {
     .0x000 = BattleWorkUnitPart* next_part;
     .0x004 = BattleUnitKindPart* kind_part_params;
-    
-    .0x024 = vector3 ?  // assigned from parts.0x0c
-    
+    .0x008 = char* part_name;
+    .0x00c = vector3 HomePos;
+    .0x018 = vector3 Position;
+    .0x024 = vector3 PositionOffset;
+    .0x030 = vector3 DispOffset;
     .0x03c = vector3 PartsBaseRotate;
     .0x048 = vector3 PartsRotate;
     .0x054 = vector3 PartsRotateOffset;
     .0x060 = vector3 PartsScale;
     .0x06c = vector3 PartsBaseScale;
     
-    .0x0bd = int8  // face_direction / attack direction
+    .0x07c = vector3 move_start_pos;
+    .0x088 = vector3 move_current_pos;
+    .0x094 = vector3 move_target_pos;
+    .0x0a0 = float ?  // used in FallPartsPosition
+    .0x0a4 = float move_speed;
+    .0x0a8 = float fall_accel;
+    .0x0ac = float ?  // used in FallPartsPosition
+    .0x0b0 = float ?  // used in FallPartsPosition
+    .0x0b4 = float ?  // used in FallPartsPosition
     
-    .0x170 = vector3 ?  // assigned from parts.0x18
-    .0x17c = vector3 ?  // unknown
-    .0x188 = vector3 ?  // assigned from parts.0x24
-    .0x194 = vector3 ?  // unknown
+    .0x0bc = int8 move_direction?
+    .0x0bd = int8 face_direction / attack_direction?
+    
+    // Sound information for specific actions:
+    // .0x0f8~ff = uint32,32 from "SetPartsJumpSound"
+    // .0x100~0d = uint32,32,16,16,16 from "SetPartsRunSound"
+    // .0x110~1d = uint32,32,16,16,16 from "SetPartsWalkSound"
+    // .0x120~2d = uint32,32,16,16,16 from "SetPartsDiveSound"
+    .0x0f8 ~ .0x12d = ? 
+    .0x130 ~ ... = uint32[N] parts_work;  // may extend to 0x170?
+    
+    .0x170 = vector3 hit_base_pos?  // assigned from parts.0x18
+    .0x17c = vector3 hit_offset;
+    .0x188 = vector3 hit_cursor_base_pos?  // assigned from parts.0x24
+    .0x194 = vector3 hit_cursor_offset;
     .0x1a0 = int16 ?
-    .0x1a2 = int16 ?  // assigned from parts.0x30
+    .0x1a2 = int16 ?  // assigned from parts.0x30; some sort of scale?
     .0x1a4 = int16 ?  // assigned from parts.0x32
     
     .0x1ac = PartsAttribute_Flags status_flags;
     .0x1b0 = PartsCounterAttribute_Flags property_flags;
     .0x1b4 = BattleUnitDefense* defense;
     .0x1b8 = BattleUnitDefenseAttr* defense_attr;
-    .0x1bc = // PoseTable* pose_table;
+    .0x1bc = void* // PoseTable* pose_table;
+    .0x1c0 = void* // animPose-related work
+    
+    .0x204 = uint32 // flags related to AnimeChangePoseDirect
+    
+    .0x20c = float anime_motion_speed;
+    
+    .0x215 = int8 // flags related to AnimeChangePoseDirect
+    
+    .0x220 ~ .0x227 = int8[8] // related to SetPartsBlur
     
     .0x2d4 = BattleUnitKindPart* // kind_part.index if status_flags & 1
     
+    .0x4d0 = void* (?) anime_pose_sound_table;
+    .0x4d4 = ?  // BtlUnit_PoseSoundInit-related
+    .0x4d8 = ?  // BtlUnit_PoseSoundInit-related
+    .0x4dc = ?  // BtlUnit_PoseSoundInit-related
+    .0x4e0 = ?  // BtlUnit_ControlPoseSoundMain-related
+    .0x4e4 = ?  // BtlUnit_ControlPoseSoundMain-related
+    .0x4e8 = int ?
     .0x4ec = BattleWorkUnit* battle_unit_owner;
+    .0x4f0 = int8[4] color_rgba;
+    
 } [ size = 0x500 ]
 
 struct BattleWorkActRecord {
@@ -1729,16 +1853,13 @@ struct BattleWorkActionCommandManager {
     // related to display functions. 
     .0x290 ~ .0x2bb = BattleWorkActionCommandDispParams? ac_disp_params?
     // Used differently across a number of action commands.
-    .0x2bc ~ .0x89b = BattleWorkActionCommandParams? ac_params?
-} [size = 0x89c or more]
+    // 0x018 = float run_away_meter in bar-filling commands.
+    .0x2bc ~ .0x89b = uint32[500] ac_work;
+    .0xa8c ~ .0xaa7 // related to stylish commands
+} [size = 0xaa8]
 
 struct BattleWorkActionCommandDispParams {
 } [size = 0x2c]
-
-struct BattleWorkActionCommandParams {
-    // Only used for certain action commands.
-    .0x018 = float run_away_meter;
-} [size = 0x5e0 or more]
 
 struct BattleWorkAfterReaction {
 } [size = 0x8]
@@ -1769,7 +1890,7 @@ struct BattleWorkAudience {
     // 1-indexed lookup into 0x802f9eac (U), or 5.0 + 3.0 * Mario's level
     .0x13778 = float audience_gain_rate;
     .0x1377c = float target_audience_value;
-    .0x13780 = float extra_initial_audience_value;
+    .0x13780 = float added_audience_value;
     .0x13784 = int32 current_audience_count_int;
     .0x13788 = int32 current_audience_count_int_right?
     .0x1378c = int32 current_audience_count_int_left?
@@ -1909,13 +2030,78 @@ struct BattleWorkCamera {
 } [size = 0x104]
 
 struct BattleWorkCommand {
-} [size = 0x544 or more]
+    .0x000 = uint32 // some sort of state
+    .0x004 = uint32 menu_type_active;
+    // Length 0x14, For top-level commands (jump, hammer, items, etc.)
+    // 0x00 = uint32 type;
+    // 0x04 = uint32 enabled?
+    // 0x08 = char* description;
+    // 0x0c = int16 icon?
+    // 0x10 = uint32 ? (3 if disabled; may have to do with greying out?)
+    .0x008 ~ .0x07f = BattleWorkCommandAct[6] act_class_table;
+    // Length 0x1c, For jump, hammer, special / partner moves, and item menus.
+    // 0x00 = BattleWeapon* weapon_params;
+    // 0x04 = uint32 ?
+    // 0x08 = char* name;
+    // 0x0c = int16 icon;
+    // 0x10 = ?
+    // 0x14 = uint32 item_id;
+    // 0x18 = ?
+    .0x080 ~ .0x2cb = BattleWorkCommandWeapon[21] weapon_table;
+    // Length 0x1c, For "strategies" menu.
+    // 0x00 = uint32 type;
+    // 0x04 = uint32 enabled?
+    // 0x08 = uint32 ? (3 if disabled)
+    // 0x0c = char* name
+    // 0x10 = int16 icon;
+    // 0x14 = char* help_message;
+    // 0x18 = uint32 cost;
+    .0x2cc ~ .0x38f = BattleWorkCommandOperation[7] operation_table;
+    // Length 0x18, For party member switching menu
+    // 0x00 = BattleUnitType party_type;
+    // 0x04 = uint32 enabled?
+    // 0x08 = char* name;
+    // 0x0c = int16 icon;
+    // 0x10 = char* help_message;
+    // 0x14 = int16 current_hp;
+    // 0x18 = int16 max_hp;
+    .0x390 ~ .0x44f = BattleWorkCommandParty[8] party_table;
+    // Length 0x18, For items menu if Double/Triple Dip equipped.
+    // 0x00 = uint32 enabled?
+    // 0x04 = char* name;
+    // 0x08 = char* help_message;
+    // 0x0c = int16 icon?
+    // 0x10 = uint32 cost;
+    // 0x14 = ? (opposite of 0x00?)
+    .0x450 ~ .0x497 = BattleWorkCommandMultiItem[3] multi_item_table;
+    // Length 0xc, represents the visible / selected options in a menu.
+    // 0x0 = int32 abs_position;
+    // 0x4 = int32 rel_position;
+    // 0x8 = int32 num_options;
+    .0x498 ~ .0x53f = BattleWorkCommandCursor[14] cursor_table;
+    
+    // Pointer to 0x124-length struct containing info about the displayed window
+    // 0x000 = BattleWorkCommandCursor* cursor;
+    .0x55c = void* window_work;
+    
+} [size = 0x574]
 
 struct BattleWorkIcon {
 } [size = 0x9c0]
 
 struct BattleWorkPad {
-    .0x018 ~ .0x08f = uint32 input_history[30];
+    // Raw controller state for the past two polls.
+    .0x000 ~ .0x00b = PADStatus current_state;
+    .0x00c ~ .0x017 = PADStatus previous_state;
+    // Buttons / stick dirs (high 16 bits) pressed/held/etc. for past 30 frames.
+    .0x018 ~ .0x08f = uint32[30] pressed_history;
+    .0x090 ~ .0x107 = uint32[30] held_history;
+    .0x108 ~ .0x17f = uint32[30] down_history;
+    // speculative; only first word used, the rest of space seems unreferenced.
+    .0x180 ~ .0x1f7 = uint32[30] released_history;
+    // seemingly for repeating inputs every N polls if identical; unreferenced?
+    .0x1f8 = uint8 held_buttons_repeat_state;
+    .0x1f9 = uint8 held_buttons_repeat_frame_count;
 } [size = 0x1fc]
 
 struct BattleWorkPartyInfo {
@@ -1964,13 +2150,19 @@ struct BattleWorkStageHazards {
     .0x1d8 = uint32 stage_jet_fire_event_id;
     .0x1dc = int32 fog_turn_count;
     .0x1e0 = int32 fog_active;
-    .0x1e4 = ?
+    .0x1e4 = uint32 ?  // unknown event_id
     .0x1e8 = uint32 ceiling_fall_event_id;
     .0x1ec = uint32 object_fall_event_id;
 } [size = 0x1f0]
 
 struct BattleWorkStageObject {
+    .0x04 = float/vector3? // related to moving away for special moves?
+    
+    .0x1c = vector3 rotation;
+    .0x28 = float/vector3? // related to moving away for special moves?
+    
     .0x64 = BattleStageObjectData* base_data;
+    .0x68 = uint32 unk_flags?
 } [size = 0x7c]
 
 struct BattleWorkStatusChangeMsg {
@@ -1981,6 +2173,7 @@ struct BattleWorkWeaponTargets {
     .0x004 ~ .0xa6b = BattleWorkTarget[74] target_info;
     .0xa6c = int8 num_targets;
     .0xa6d ~ .0xab6 = int8[74] target_info_indices;
+    .0xab7 = int8 currently_selected_target;
     .0xab8 = int32 attacker_id;
     .0xabc = int32 attacker_enemy_belong;
     .0xac0 = AttackTargetClass_Flags attack_target_flags_hi;
@@ -2002,6 +2195,35 @@ struct BattleWorkTarget {
     .0x1e-1f = padding?
     .0x20 = ?
 } [size = 0x24]
+
+// Native controller state structure.
+struct PADStatus {
+    .0x00 = uint16 buttons;
+    .0x02 = int8 stick_x;
+    .0x03 = int8 stick_y;
+    .0x04 = int8 substick_x;  // c-stick
+    .0x05 = int8 substick_y;
+    .0x06 = uint8 trigger_l;
+    .0x07 = uint8 trigger_r;
+    .0x08 = uint8 analog_a;
+    .0x09 = uint8 analog_b;
+    .0x0a = int8 error;
+    .0x0b = int8 // padding
+} [size = 0xc]
+
+// Used for "DEMOPadInit", etc.; not sure if TTYD-specific or also native
+struct GamepadStatus {
+    .0x00 = PADStatus pad_status;
+    .0x0c = uint16 buttons_pressed;
+    .0x0e = uint16 buttons_released;
+    .0x10 = uint16 stick_dirs_down;
+    .0x12 = uint16 stick_dirs_pressed;
+    .0x14 = uint16 stick_dirs_released;
+    .0x16 = int16 stick_x_delta;
+    .0x18 = int16 stick_y_delta;
+    .0x1a = int16 substick_x_delta;
+    .0x1c = int16 substick_y_delta;
+} [size = 0x1e]
 
 // Very scant documentation / intermediate structures...
 
@@ -2057,5 +2279,21 @@ struct marioSt ("GameGlobals") {
     .0x0168 = void* fbat_ptr;  (.0x08 = NpcWork)
     .0x0178 = char gswfData[1024];
     .0x0578 = char gswData[2048];  // Pit of 100 trials floor = .0xaa1
-    ...
+    .0x1328 = uint32[4] gamepad_buttons_down;
+    .0x1338 = uint32[4] gamepad_buttons_pressed;
+    .0x1348 = uint32[4] gamepad_buttons_repeated;
+    .0x1358 = uint32[4] gamepad_buttons_repeated_slow;
+    .0x1368 = uint32[4] gamepad_buttons_released;
+    .0x1378 = uint32[4] gamepad_stick_dirs_down;
+    .0x1388 = uint32[4] gamepad_stick_dirs_pressed;
+    .0x1398 = uint32[4] gamepad_stick_dirs_repeated;
+    .0x13a8 = uint32[4] gamepad_stick_dirs_repeated_slow;
+    .0x13b8 = int8[4] gamepad_analog_stick_xpos;
+    .0x13bc = int8[4] gamepad_analog_stick_ypos;
+    .0x13c0 = int8[4] gamepad_c_stick_xpos;
+    .0x13c4 = int8[4] gamepad_c_stick_ypos;
+    .0x13c8 = uint8[4] gamepad_left_trigger;
+    .0x13cc = uint8[4] gamepad_right_trigger;
+    .0x13d0 = uint8[4] // rumble-related
+    .0x13d4 = uint8[4] ?
 } [size = 0x13d8]
