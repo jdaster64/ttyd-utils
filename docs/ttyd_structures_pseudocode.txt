@@ -1775,8 +1775,6 @@ struct BattleWorkUnitPart {
     
     .0x220 ~ .0x227 = int8[8] // related to SetPartsBlur
     
-    .0x2d4 = BattleUnitKindPart* // kind_part.index if status_flags & 1
-    
     .0x4d0 = void* (?) anime_pose_sound_table;
     .0x4d4 = ?  // BtlUnit_PoseSoundInit-related
     .0x4d8 = ?  // BtlUnit_PoseSoundInit-related
