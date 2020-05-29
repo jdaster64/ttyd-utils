@@ -1420,7 +1420,8 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x02858 ~ .0x1616b = BattleWorkAudience audience_work;
     .0x1616c ~ .0x1629f = BattleWorkBreakSlot bingo_work;
     .0x162a0 ~ .0x163d3 = BattleWorkPartyInfo[7] party_info_work;
-    
+    // Flags for tattles of UnitKinds 0 - ...; probably 8 uint32s (must be 6+).
+    .0x163d4 ~ .0x163f3 = uint32[8?] tattled_unit_type_flags;
     // Set if given badges are equipped.
     // 0x134 = 1
     // 0x135 = 2
@@ -1489,8 +1490,8 @@ struct BattleWorkAlliance {
 
 struct BattleWorkUnit {
     .0x000 = int32 unit_id;
-    .0x004 = ? (also unit_kind?)
-    .0x008 = BattleUnitType(int32) unit_kind;
+    .0x004 = BattleUnitType(int32) true_kind?  // e.g. Tattle transformed enemy?
+    .0x008 = BattleUnitType(int32) current_kind;  // generally used instead
     .0x00c = int8 alliance;
     .0x00d = int8 level;
     .0x00e = int8 group_setup_index;  // index in BattleGroupSetup.
@@ -1880,7 +1881,7 @@ struct BattleWorkAudience {
     // 0x8000 - Punis scared? skip event CheckReactionPerPhase state 0xa-b if unset
     // 0x40000 - turn-end phase event trigger chance does not increment;
                  CheckReactionPerPhase jumps to state F and returns 1 in state 0
-    .0x00000 = uint32 state;
+    .0x00000 = uint32 flags;
     
     .0x00004 = currently_executing_event_id?
     
@@ -1958,7 +1959,7 @@ struct BattleWorkAudience {
 
 struct BattleWorkAudienceMember {
     // if 0x80 set, count as 2 audience slots
-    .0x000 = uint32 0x000_unk_flags;
+    .0x000 = uint32 flags;
     
     // 0 = Wait
     // 1 = WaitHurimuki
@@ -1998,6 +1999,20 @@ struct BattleWorkAudienceMember {
     // 11 = Piranha Plant
     // 12 = Luigi?
     .0x01b = int8 type;
+    .0x01c = int16 ?
+    
+    .0x048 = vector3 Position;
+    .0x054 = vector3 ?
+    .0x060 = vector3 ?
+    .0x06c = vector3 ?
+    .0x078 = vector3 ?
+    .0x084 = vector3 ?
+    .0x090 = vector3 ?
+    .0x09c = vector3 Rotation;
+    .0x0a8 = vector3 RotationOffset;    
+    .0x0b4 = vector3 HomePosition;
+    
+    .0x0e8 = float ?
     
     .0x12c = int32 phase_evt_turn_countdown?  // for bomb explosion, koopa shell?
 } [size = 0x134]
