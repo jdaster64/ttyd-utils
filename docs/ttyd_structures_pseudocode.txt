@@ -1055,11 +1055,11 @@ struct BattleUnitKind {
     .0x1e ~ .0x1f = padding?
     .0x20 = vector3 center_offset;
     .0x2c = int16[2] hp_gauge_offset;
-    .0x30 = vector3 ???
-    .0x3c = vector3 held_item_base_position?
+    .0x30 = vector3 talk_toge_base_offset?
+    .0x3c = vector3 held_item_base_offset?
     .0x48 = vector3 burn_flame_offset;  // BSE_Fire()
-    .0x54 = float?
-    .0x58 = float?
+    .0x54 = float ?  // used in unknown Vivian function (0x80182cc4 in US)
+    .0x58 = float ?  // used in unknown Vivian function (0x80182cc4 in US)
     .0x5c = vector3 binta_hit_offset;  // love slap?
     .0x68 = vector3 kiss_hit_offset;  // lip lock?
     .0x74 = vector3 cut_base_offset;
@@ -1091,11 +1091,11 @@ struct BattleUnitKindPart {
     .0x04 = const char* name;
     .0x08 = const char* model_name?
     .0x0c = vector3 part_offset_pos;
-    .0x18 = vector3 part_hit_base_pos?
-    .0x24 = vector3 part_hit_cursor_base_pos?
+    .0x18 = vector3 part_hit_base_offset?
+    .0x24 = vector3 part_hit_cursor_base_offset?
     .0x30 = int16 ? (some sort of scale?)
     .0x32 = int16 ?
-    .0x34 = int16 ? (always 255?)
+    .0x34 = int16 base_alpha; // always 255, seemingly
     .0x36 ~ .0x37 = padding?
     // Pointers to arrays of int8[number of attack element types].
     .0x38 = BattleUnitDefense* default_defense;
@@ -1520,7 +1520,7 @@ struct BattleWorkUnit {
     .0x090 = vector3 Scale;
     .0x09c = vector3 BaseScale;
     .0x0a8 = vector3 toge_offset?
-    .0x0b4 = vector3 held_item_base_position?
+    .0x0b4 = vector3 held_item_base_offset?
     .0x0c0 = vector3 possession_item_offset;
     .0x0cc = int16 width;
     .0x0ce = int16 height;
@@ -1652,8 +1652,8 @@ struct BattleWorkUnit {
     .0x310 = int8 ?
     .0x311 = int8 move_color_lv?
     .0x312 = int8 ?
-    // referenced in BtlUnit_Delete, unknown purpose
-    .0x314 = void* // length 0x44 struct, has to do with unused UFO actor
+    // referenced in BtlUnit_Delete, unknown purpose (effect-related?)
+    .0x314 = void* // seems to be of variable length
     .0x318 = code* // custom destructor?
     .0x31c = void* ?
     
@@ -1729,7 +1729,7 @@ struct BattleWorkUnitPart {
     .0x054 = vector3 PartsRotateOffset;
     .0x060 = vector3 PartsScale;
     .0x06c = vector3 PartsBaseScale;
-    
+    .0x078 = float ?  // some sort of scale; used in btlDispMain, maybe others
     .0x07c = vector3 move_start_pos;
     .0x088 = vector3 move_current_pos;
     .0x094 = vector3 move_target_pos;
@@ -1785,8 +1785,10 @@ struct BattleWorkUnitPart {
     .0x4e4 = ?  // BtlUnit_ControlPoseSoundMain-related
     .0x4e8 = int ?
     .0x4ec = BattleWorkUnit* battle_unit_owner;
-    .0x4f0 = int8[4] color_rgba;
-    
+    .0x4f0 = uint8[4] color_rgba;
+    // Takes into account kind part.0x34, invisible status, etc.
+    .0x4f4 = uint8[4] blended_color_rgba; 
+    .0x4f8 = float ?  // used in btlDispMain
 } [ size = 0x500 ]
 
 struct BattleWorkActRecord {
