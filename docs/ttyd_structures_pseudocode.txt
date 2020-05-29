@@ -1781,7 +1781,7 @@ struct BattleWorkUnitPart {
     .0x4dc = ?  // BtlUnit_PoseSoundInit-related
     .0x4e0 = ?  // BtlUnit_ControlPoseSoundMain-related
     .0x4e4 = ?  // BtlUnit_ControlPoseSoundMain-related
-    .0x4e8 = int ?
+    .0x4e8 = int ?  // Set/checked for -1 in BtlUnit_Entry/Delete
     .0x4ec = BattleWorkUnit* battle_unit_owner;
     .0x4f0 = uint8[4] color_rgba;
     // Takes into account kind part.0x34, invisible status, etc.
@@ -2028,6 +2028,38 @@ struct BattleWorkBreakSlotReel {
 } [size = 0x5c]
 
 struct BattleWorkCamera {
+    .0x000 = uint32 flags;
+    .0x004 = ?
+    .0x008 = int32 priority_limit;
+    .0x00c = int32 mode;
+    .0x010 = uint32 unit1_target_idx;
+    .0x014 = uint32 unit1_target_part_idx;
+    .0x018 = uint32 unit2_target_idx;
+    .0x01c = uint32 unit2_target_part_idx;
+    .0x020 = uint32 audience_target_idx;
+    .0x024 = float zoom;
+    .0x028 = int16 move_speed_lv;
+    .0x02a = int16 zoom_speed_lv;
+    .0x02c = vector3 ?
+    .0x038 = vector3 ?
+    .0x044 = vector3 ?
+    .0x050 = vector3 ?
+    .0x05c = vector3 pos_offset;
+    .0x068 = vector3 move_speed;
+    .0x074 = vector3 ?
+    // .0x080 ~ .0x0b7 are parameters for "move_to".
+    .0x080 = int32[3] ?
+    .0x08c = vector3 ?
+    .0x098 = vector3 ?
+    .0x0a4 = vector3 ?
+    .0x0b0 = vector3 ?
+    .0x0bc = vector3 unit1_target_pos;
+    .0x0c8 = vector3 unit2_or_audience_target_pos;
+    // .0x0d4 ~ .0x0fb are parameters for camera shaking (alternating w and h).
+    .0x0d4 = int32[6] ?
+    .0x0ec = float[4] ?
+    .0x0fc = float ?
+    .0x100 = float ?
 } [size = 0x104]
 
 struct BattleWorkCommand {
