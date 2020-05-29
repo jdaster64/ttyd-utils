@@ -1185,7 +1185,7 @@ struct BattleWeapon {
     // 0x17, 0x18 - Quickly spin (used w/Love Slap)
     // 0x19 - Blown away (like Gale Force); only happens if killed
     // 0x1b - Used by a few miscellaneous attacks, unknown use
-    .0x6d = int8 damage_effect;
+    .0x6d = int8 damage_pattern;
     .0x6e = int8 weapon_ac_level;  // Base difficulty; Always 3 by default?
     .0x6f = int8 ?  // Always 2, seemingly unused; perhaps was a "Nice"-esque default reward.
     .0x70 = const char* ac_message;  // msg_ac_...
@@ -1519,8 +1519,7 @@ struct BattleWorkUnit {
     .0x084 = vector3 CenterOffset;
     .0x090 = vector3 Scale;
     .0x09c = vector3 BaseScale;
-    .0x0a8 = ?
-    .0x0ac = vector3 toge_offset?
+    .0x0a8 = vector3 toge_offset?
     .0x0b4 = vector3 held_item_base_position?
     .0x0c0 = vector3 possession_item_offset;
     .0x0cc = int16 width;
@@ -1610,6 +1609,7 @@ struct BattleWorkUnit {
     .0x218 ~ .0x257 = uint32 battle_unit_work[16];
     // .0x258 ~ .0x287 seem to all be used during a single "act" (attack).
     .0x258 = BattleWorkUnitPart* currently_targeted_part;  // set on target unit
+    
     .0x260 = int16 hp_damaging_hits_dealt;  // used for Power Bounce decay, etc.
     .0x264 = int32 total_hp_damage_taken;
     .0x268 = int32 total_fp_damage_taken;
@@ -1764,7 +1764,8 @@ struct BattleWorkUnitPart {
     .0x1b4 = BattleUnitDefense* defense;
     .0x1b8 = BattleUnitDefenseAttr* defense_attr;
     .0x1bc = void* // PoseTable* pose_table;
-    .0x1c0 = void* // animPose-related work
+    .0x1c0 = int32 anim_pose_type;
+    .0x1c4 = char[?] anim_pose_name?
     
     .0x204 = uint32 // flags related to AnimeChangePoseDirect
     
