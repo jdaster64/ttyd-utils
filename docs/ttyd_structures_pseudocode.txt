@@ -1958,9 +1958,15 @@ struct BattleWorkAudience {
 } [size = 0x13914]
 
 struct BattleWorkAudienceMember {
-    // if 0x80 set, count as 2 audience slots
+    // 0x80 = Takes up 2 audience slots instead of 1
     .0x000 = uint32 flags;
-    
+    .0x004 = int32 ?  // substate? different uses in BACPK subroutines
+    .0x008 = int32 ?  // substate timer? different uses in BACPK subroutines
+    .0x00c = float ?  // # arm pumps in JoyRaiseArm, progress to home in Enter
+    .0x010 = float ?  // delta towards home per frame in Enter
+    .0x014 = float ?  // total distance to home position in Enter
+    .0x018 = uint8 ?  // change in .0x043 used in Sleep
+    // BattleAudienceCtrlProcessKinopio subroutine type:
     // 0 = Wait
     // 1 = WaitHurimuki
     // 2 = WaitKubiKatamuke
@@ -1983,8 +1989,9 @@ struct BattleWorkAudienceMember {
     // 0x13 = Fire
     // 0x14 = Eat
     // 0x15 = ?
-    .0x019 = int8 state;
-    
+    .0x019 = int8 status;
+    // set to param1 of .0x028 type -2; TEXGetGXTexObjFromPalette param_3
+    .0x01a = uint8 ?
     // 0 = Toad
     // 1 = X-Naut
     // 2 = Boo
@@ -1999,22 +2006,56 @@ struct BattleWorkAudienceMember {
     // 11 = Piranha Plant
     // 12 = Luigi?
     .0x01b = int8 type;
-    .0x01c = int16 ?
-    
+    .0x01c = int16 item_idx;  // index into BattleWorkAudienceItem
+    .0x020 = void* ?   // init to audience_kind[type].0x4; anim data table?
+    .0x024 = void* ?   // BattleAudience_SetAnim; looked up from .0x020[param_2]
+    .0x028 = void* ?   // current anim command?
+    .0x02c = uint32 ?  // anim command timer?
+    .0x030 = uint32 ?  // used as frame counter in WaitKubiKatamuke/WaitHurimuki
+    .0x034 = uint32[3] ?  // param1 of .0x028 type -6, indexed by .0x040
+    .0x040 = uint8 ?  // unknown; only referenced in .0x028 type -6 and -7
+    .0x041 = uint8 ?  // GXSetChanMatColor
+    .0x042 = uint8 ?
+    .0x043 = uint8 ?  // Used in Sleep; probably related to pulsing colors?
+    .0x044 = uint8 ?
     .0x048 = vector3 Position;
-    .0x054 = vector3 ?
-    .0x060 = vector3 ?
-    .0x06c = vector3 ?
-    .0x078 = vector3 ?
-    .0x084 = vector3 ?
-    .0x090 = vector3 ?
+    .0x054 = vector3 ?  // final scale (used in disp function)
+    .0x060 = vector3 ?  // scale
+    .0x06c = vector3 ?  // skew/stretch? Used in KubiKatamuke, Eat, JoyRaiseArm
+    .0x078 = vector3 ?  // velocity?
+    .0x084 = vector3 ?  // acceleration?
+    .0x090 = vector3 ?  // defaults to 0,0,-1; facing dir vector?
     .0x09c = vector3 Rotation;
     .0x0a8 = vector3 RotationOffset;    
     .0x0b4 = vector3 HomePosition;
-    
+    // The following are updated in BattleAudienceCtrlProcessKinopio every frame
+    .0x0c0 = vector3  // relative position to home? is 0 when seated
+    .0x0cc = vector3  // relative vel?
+    .0x0d8 = vector3  // relative accel, speculatively; .0x0dc = accel_y
+    .0x0e4 = float    // relative jerk_y?
+    // 0, 90, 180, or 270 based on sign of .0x078.x or .0x118.x? Unknown use.
     .0x0e8 = float ?
-    
-    .0x12c = int32 phase_evt_turn_countdown?  // for bomb explosion, koopa shell?
+    .0x0ec = BattleWorkUnit* target_unit;  // for boo transparency
+    .0x0f0 = int32 audience_eat_idx;       // for piranha plant event
+    .0x0f4 = int32 sleep_turns;
+    // The following fields are used by evt_audience_move/jump_* ...
+    .0x0f8 = int32 evt_move_frames_remanining;
+    .0x0fc = int32 evt_move_frames_total;
+    .0x100 = float evt_move_start_pos_x;
+    .0x104 = float evt_move_target_pos_x;
+    .0x108 = float evt_move_start_pos_y;
+    .0x10c = float evt_move_target_pos_y;
+    .0x110 = float evt_move_start_pos_z;
+    .0x114 = float evt_move_target_pos_z;
+    .0x118 = vector3 evt_move_delta_pos;
+    .0x124 = float evt_move_gravity_y;
+    .0x128 = uint32 evt_move_interpolation_type;
+    // Has various uses based on the member's type, including:
+    // - turn countdown for Koopas' shell event or Bob-ombs' explosion
+    // - event thread id for Shy Guys firing stage jets
+    // - (float) angle controlling magnitude of idle animation bobbing for Boos
+    .0x12c = uint32 (or float) audience_work;
+    .0x130 = float boo_float_displacement;
 } [size = 0x134]
 
 struct BattleWorkAudienceItem {
