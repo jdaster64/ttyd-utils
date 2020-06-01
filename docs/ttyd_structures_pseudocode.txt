@@ -976,26 +976,32 @@ struct BattleStageData {
     .0x00c = BattleStageObjectData* props;
     .0x010 = BattleWeapon background_a_weapon;
     .0x0d0 = BattleWeapon background_b_weapon;
-    .0x190 = EventScript* init_evt;
+    .0x190 = EventScript* init_evt_code;
     // Falling bg events fall back to a standard one if not set.
-    .0x194 = EventScript* destroy_bg_a1_evt;
-    .0x198 = EventScript* destroy_bg_a2_evt;
-    .0x19c = EventScript* destroy_bg_b_evt;
-    .0x1a0 = ?
-    .0x1a4 = ?
-    .0x1a8 = EventScript*   ?  // scrolling bg? e.g. bgset_rsh_bg_event
-    .0x1ac = EventScript*   ?  // rotating bg? e.g. bgset_moo_space_event
-    .0x1b0 = uint8[4]       ?  // seem to be bools set for certain stages
+    .0x194 = EventScript* destroy_bg_a1_evt_code;
+    .0x198 = EventScript* destroy_bg_a2_evt_code;
+    .0x19c = EventScript* destroy_bg_b_evt_code;
+    .0x1a0 = EventScript* bg_a1_evt_code;
+    .0x1a4 = EventScript* bg_a2_evt_code;
+    .0x1a8 = EventScript* bg_b_scroll_evt_code;  // e.g. bgset_rsh_bg_event
+    .0x1ac = EventScript* bg_b_rotate_evt_code;  // e.g. bgset_moo_space_event
+    .0x1b0 = uint8 ?
+    .0x1b1 = uint8 disallow_destroying_bg_a1;
+    .0x1b2 = uint8 disallow_destroying_bg_a2;
+    .0x1b3 = uint8 disallow_destroying_bg_b;
 } [size = 0x1b4]
 
 struct BattleStageObjectData {
     .0x00 = const char* prop_name;
-    .0x04 = int16 ???  // almost always 2; excepting Glitzville ceiling (has 5)
+    // Almost always 2, excepting Glitzville ceiling (has 5).
+    // 0 and 1 seem to be related to the nonexistent tree and switch actors?
+    .0x04 = int16 ???  
     .0x06 = int16 layer;  // 0 = A1, 1 = A2, 2 = B, 3 = bg, 6 = ceiling
     .0x08 = float x_pos;
     .0x0c = float y_pos;
     .0x10 = float z_pos;
-    .0x14 ~ .0x15 = int8[2] ?  // seem to always sum to 60
+    .0x14 = int8 num_frames_to_start_falling;
+    .0x15 = int8 num_frames_to_fall;
     .0x16 ~ .0x17 = padding?
 } [size = 0x18]
 
@@ -1639,7 +1645,7 @@ struct BattleWorkUnit {
     .0x2b8 = EventScript* entry_script_code;
     .0x2bc = int32 ?  // entry_event_id?
     .0x2c0 = EventScript* ceiling_fall_script_code;
-    .0x2c4 = int32 ?  // ceiling_fall_event_id?
+    .0x2c4 = int32 ceiling_fall_event_id;
     .0x2c8 = EventScript* unknown_script_code;
     .0x2cc = int32 unknown_event_id;
     .0x2d0 = EventScript* hit_script_code? // BattleRunHitEventDirect
@@ -1672,6 +1678,7 @@ struct BattleWorkUnit {
     .0x344 = void* fire_burn_eff?
     .0x348 ~ .0xae7 = ? "BattleStatusIcon"-related
     .0xae8 ~ .0xb2f = ? "BattleStatusChangeInfoWork"-related
+    .0xb30 = int32 stage_object_id;  // used by tree/switch actors
 } [ size = 0xb34 ]
 
 struct BattleWorkUnitBadgesEquipped {
@@ -2217,41 +2224,59 @@ struct BattleWorkStage {
 } [size = 0xb3c]
 
 struct BattleWorkStageHazards {
-    .0x01c = uint8 stage_effects_allowed?  // 2,4,8,20 = !A1,!A2,!B,object
-    .0x020 = uint32 ? related to A1 or B-destroying event id?
-    .0x024 = uint32 ? related to A1-destroying event id?
-    .0x028 = uint32 ? related to A2-destroying event id?
-    .0x02c = uint32 ? related to B-destroying event id?
-    
-    // Selected by Mario's rank.
+    .0x00 = ?  // unused?
+    .0x04 = vector3 ?  // rotation? referenced in BattleStageObjectMain
+    .0x10 = vector3 ?  // temp rotation?
+    // 0x2 = No BG A1 allowed
+    // 0x4 = No BG A2 allowed
+    // 0x8 = No BG B allowed
+    // 0x10 = No closing walls allowed (unused hazard?)
+    // 0x20 = No falling objects allowed
+    .0x01c = uint8 stage_effects_allowed?
+    .0x020 = uint32 bg_a1_or_b_falling_evt_id;  // may be used for other stuff
+    .0x024 = uint32 bg_a1_evt_id;
+    .0x028 = uint32 bg_a2_evt_id;
+    .0x02c = uint32 bg_b_scrolling_or_falling_evt_id;
+    .0x030 = uint32 bg_b_rotating_evt_id;
+    // Points to the nozzle / fall object data for Mario's current rank.
     .0x034 = BattleStageNozzleData* nozzle_data;
     .0x038 = BattleStageFallObjectData* fall_object_data;
-    
-    // Used for constructing attacks for stage jets, maybe others.
-    .0x044 = BattleWeapon[2] temp_weapon_params;
+    // Point to stage_jet_temp_weapon_params[] once constructed.
+    .0x03c = BattleWeapon*[2] stage_jet_weapon_params;
+    .0x044 = BattleWeapon[2] stage_jet_temp_weapon_params;
     .0x1c4 = int8[3] stage_jet_face_directions;
     .0x1c7 = int8[3] stage_jet_changing_face_directions;
     .0x1ca = int8 current_stage_jet_type;
     .0x1cb = ? padding, probably
-    .0x1cc = uint32 stage_jet_change_event_id?
-    .0x1d0 = ?
-    .0x1d4 = ?
+    .0x1cc = uint32[3] stage_jet_change_event_id;
     .0x1d8 = uint32 stage_jet_fire_event_id;
     .0x1dc = int32 fog_turn_count;
     .0x1e0 = int32 fog_active;
-    .0x1e4 = uint32 ?  // unknown event_id
+    .0x1e4 = uint32 wall_close_event_id;  // _close_wall_event; unused hazard?
     .0x1e8 = uint32 ceiling_fall_event_id;
     .0x1ec = uint32 object_fall_event_id;
 } [size = 0x1f0]
 
 struct BattleWorkStageObject {
-    .0x04 = float/vector3? // related to moving away for special moves?
-    
+    .0x00 = int32 id;  // one-indexed?
+    .0x04 = vector3 position;
+    .0x10 = vector3 position_offset1?
     .0x1c = vector3 rotation;
-    .0x28 = float/vector3? // related to moving away for special moves?
-    
+    .0x28 = vector3 position_offset2?  // used to move away for special moves?
+    .0x34 = vector3 ?  // initialized to 999, 999, 999; position temp?
+    .0x40 = vector3 ?  // initialized to 999, 999, 999; .0x10 temp?
+    .0x4c = vector3 ?  // initialized to 999, 999, 999; rotation temp?
+    .0x58 = vector3 ?  // initialized to 999, 999, 999; .0x28 temp?
     .0x64 = BattleStageObjectData* base_data;
-    .0x68 = uint32 unk_flags?
+    .0x68 = uint32 flags;
+    .0x6c = uint32 battle_unit_idx;  // used for associated tree/switch actor
+    .0x70 = int8 num_frames_to_start_falling;  // counts down to start falling
+    .0x71 = int8 num_frames_falling;           // counts up until on ground
+    // Used for background shaking before falling.
+    .0x72 = int8 ?  // initialized to 0
+    .0x73 = int8 shake_period_length;  // initialized to 10 + rand(60) frames
+    .0x74 = int8 shake_period_pos;     // initialized to 0 or half of .0x73
+    .0x78 = float shake_angle;         // 5 * sin(.0x74 / .0x73 * 360)
 } [size = 0x7c]
 
 struct BattleWorkStatusChangeMsg {
