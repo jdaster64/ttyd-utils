@@ -74,8 +74,8 @@ enum AttackTargetProperty_Flags {
     0x8000 = ? Possibly unused, code indicates similar to 0x4000
     0x10'0000 = RecoilDamage (prevents self on super/ultra hammer, gulp)
     0x100'0000 = CanOnlyTargetFrontmost
-    0x200'0000 = ? (seemingly never used; referenced in code)
-    0x400'0000 = ? (seemingly never used; referenced in code)
+    0x200'0000 = ? (seemingly unused; referenced in code); Shell Shield counters
+    0x400'0000 = ? (seemingly unused; referenced in code)
     // Determines whether to swap attacking direction in BattleSamplingEnemy.
     0x1000'0000 = TargetSameAllianceDirection
     0x2000'0000 = TargetOppositeAllianceDirection
@@ -105,7 +105,7 @@ enum BattleUnitAttribute_Flags {
     0x4 = Unquakeable (aerial / hovering)
     0x8 = causes non-unmissable attacks to auto-miss?
     0x10 = Veiled (w/Vivian)
-    0x20 = counters (unused?) AttackTargetProperty 0x200'0000?
+    0x20 = ShellShielded
     0x1000, 0x2000 = ? (used by "tree", "switch", System actors)
     0x20000 = inactive?
     0x200'0000 = counters (unused?) AttackTargetProperty 0x400'0000?
@@ -1508,7 +1508,7 @@ struct BattleWorkUnit {
     .0x020 = int8 move_state?
     .0x021 = int8 max_move_count;
     .0x022 = int8 moves_remaining;
-    .0x023 = int8 ? // also moves remaining?
+    .0x023 = int8 max_moves_this_turn;
     .0x024 = int8 active_turns?     // Used to make Slow status skip turns
     .0x025 = int8 swallow_param;    // assigned from class_params.0x8a
     .0x026 = int8 swallow_attribute // assigned from class_params.0x8b;
@@ -1536,8 +1536,8 @@ struct BattleWorkUnit {
     .0x0d8 = vector3 CutBaseOffset;
     .0x0e0 = float CutWidth;
     .0x0e4 = float CutHeight;
-    .0x0ec = vector3 BintaHitOffset;  // Love Slap?
-    .0x0f8 = vector3 KissHitOffset;  // Lip Lock?
+    .0x0ec = vector3 BintaHitOffset;  // Love Slap & other grounded moves
+    .0x0f8 = vector3 KissHitOffset;  // Lip Lock
     .0x104 = BattleUnitAttribute_Flags attribute_flags;
     .0x108 = int16 max_hp;
     .0x10a = int16 base_max_hp;  // no badges
@@ -1586,20 +1586,18 @@ struct BattleWorkUnit {
     .0x148 = vector3 MoveStartPos;
     .0x154 = vector3 MoveCurrentPos;
     .0x160 = vector3 MoveTargetPos;
-    .0x16c = uint32 ?  // referenced in "JumpSetting"
+    .0x16c = uint32 ?  // referenced in "JumpSetting"; frame counter?
     .0x170 = float move_speed;
     .0x174 = float fall_accel;
     .0x178 = float jump_speed;
-    .0x17c = // float move_angle?
-    .0x180 = // used in MarioJumpPosition
-    .0x184 = // used in MarioJumpPosition
+    .0x17c = float // angleABf
+    .0x180 = float // distABf
+    .0x184 = float // used in MarioJumpPosition
     .0x188 = int8 move_direction;
     .0x189 = int8 face_direction;  // also attack direction
     // Used in MoveSoundDataWork, LoadSeMode; params copied from .0x1c4 ~ .0x1f9
     .0x18c ~ .0x1a7 = ? 
-    .0x1a8 = // used in MarioJumpPosition
-    .0x1ac = ?
-    .0x1b0 = // used in MarioJumpPosition
+    .0x1a8 = vector3  // used in MarioJumpPosition
     .0x1b4 = // used in MarioJumpPosition
     .0x1b8 = // used in MarioJumpPosition
     .0x1bc = // used in MarioJumpPosition
@@ -1616,7 +1614,7 @@ struct BattleWorkUnit {
     .0x218 ~ .0x257 = uint32 battle_unit_work[16];
     // .0x258 ~ .0x287 seem to all be used during a single "act" (attack).
     .0x258 = BattleWorkUnitPart* currently_targeted_part;  // set on target unit
-    
+    .0x25c = ?  // set to 0 in btlSeqAct; unused?
     .0x260 = int16 hp_damaging_hits_dealt;  // used for Power Bounce decay, etc.
     .0x264 = int32 total_hp_damage_taken;
     .0x268 = int32 total_fp_damage_taken;
@@ -1657,12 +1655,19 @@ struct BattleWorkUnit {
     .0x30c = ItemDropData* held_item_table;
     // referenced in btlDispMain, unknown purpose
     .0x310 = int8 ?
-    .0x311 = int8 move_color_lv?
+    .0x311 = int8 move_color_lv?  // maybe for darkening inactive actors?
     .0x312 = int8 ?
-    // referenced in BtlUnit_Delete, unknown purpose (effect-related?)
-    .0x314 = void* // seems to be of variable length
-    .0x318 = code* // custom destructor?
-    .0x31c = void* ?
+    // Used for various purposes:
+    // - Temporary BattleWeapon* for partner moves with varying status chance
+    // - 0x300c-size struct for Stampede effects
+    // -   0xd0-size struct for loading Ch. 4 Doopliss partner actors' stats
+    // -   0x44-size struct for unused UFO actor
+    // -   0x60-size struct for "wanawana" actor replace_evt
+    // -   0x1c-size struct for Piders' yarn
+    // -  0xe14-size struct for Cortez' audience drain event
+    .0x314 = void* extra_work;
+    .0x318 = code* extra_work_custom_destructor;
+    .0x31c = void* texture_work;  // GXTex used by unit_chuchurina::mono_capture
     
     // BattleStatusEffect ...
     .0x324 = void* sleep_eff;
@@ -1778,10 +1783,19 @@ struct BattleWorkUnitPart {
     .0x204 = uint32 // flags related to AnimeChangePoseDirect
     
     .0x20c = float anime_motion_speed;
+    .0x210 = void* // some sort of callback function for displaying anim poses?
     
     .0x215 = int8 // flags related to AnimeChangePoseDirect
-    
-    .0x220 ~ .0x227 = int8[8] // related to SetPartsBlur
+    // Parameters for blurring?
+    .0x218 = ?         // passed as param_5 to btlUnitPartsBlurControl
+    .0x21c = ?         // flags? (.0x21c & 1) & (.0x26c & 1) unsets .0x228 0x2
+    .0x220 = int8[8]   // set by btlevtcmd_SetPartsBlur
+    .0x228 = ?         // _partsBlurControl param_3; flags?
+    .0x22c = MTX34 ?   // _partsBlurControl param_4
+    .0x25c = float ?   // _partsBlurControl param_1
+    .0x260 = ?         // _partsBlurControl param_5; copied from .0x218
+    .0x264 = int8[8] ? // copied from .0x220
+    .0x26c = ?         // flags?
     
     .0x4d0 = void* (?) anime_pose_sound_table;
     .0x4d4 = ?  // BtlUnit_PoseSoundInit-related
@@ -1864,7 +1878,18 @@ struct BattleWorkActionCommandManager {
     // Used differently across a number of action commands.
     // 0x018 = float run_away_meter in bar-filling commands.
     .0x2bc ~ .0x89b = uint32[500] ac_work;
-    .0xa8c ~ .0xaa7 // related to stylish commands
+    // Stylish command parameters.
+    .0xa8c = uint32 stylish_current_frame;
+    .0xa90 = uint32 stylish_window_start;  // exclusive
+    .0xa94 = uint32 stylish_window_end;    // inclusive
+    .0xa98 = uint32 stylish_end_frame;
+    .0xa9c = uint32 stylish_unit_idx;
+    //  2: A pressed in range (.0xa90, .0xa94]
+    //  1: Confused, or A never pressed
+    // -1: A pressed before .0xa90 or w/in .0xaa4 frames before start (early)
+    // -2: A pressed after frame .0xa94 (late)
+    .0xaa0 = int32 stylish_result;
+    .0xaa4 = uint32 stylish_early_frames;
 } [size = 0xaa8]
 
 struct BattleWorkActionCommandDispParams {
@@ -1959,9 +1984,10 @@ struct BattleWorkAudience {
     .0x138cc = uint32 possible_phase_event_types[14];
     .0x13904 = int32 num_possible_phase_events;
     .0x13908 = int32 turn_end_phase_event_trigger_chance;
-    
     // some sort of excitement level? counts up to 4 in BattleAudienceJoy
-    .0x1390c = int32 ?
+    .0x1390c = int32 audience_joy_level;
+    // if set to 1, audience jumps while idle like in a BINGO bonus mode
+    .0x13910 = int32 ?
 } [size = 0x13914]
 
 struct BattleWorkAudienceMember {
@@ -2036,10 +2062,10 @@ struct BattleWorkAudienceMember {
     .0x0a8 = vector3 RotationOffset;    
     .0x0b4 = vector3 HomePosition;
     // The following are updated in BattleAudienceCtrlProcessKinopio every frame
-    .0x0c0 = vector3  // relative position to home? is 0 when seated
-    .0x0cc = vector3  // relative vel?
-    .0x0d8 = vector3  // relative accel, speculatively; .0x0dc = accel_y
-    .0x0e4 = float    // relative jerk_y?
+    .0x0c0 = vector3 disp_position?  // home + rel (+ boo displacement)
+    .0x0cc = vector3 rel_position;
+    .0x0d8 = vector3 rel_vel; // speculatively; .0x0dc = vel_y
+    .0x0e4 = float   rel_accel_y;
     // 0, 90, 180, or 270 based on sign of .0x078.x or .0x118.x? Unknown use.
     .0x0e8 = float ?
     .0x0ec = BattleWorkUnit* target_unit;  // for boo transparency
@@ -2066,6 +2092,7 @@ struct BattleWorkAudienceMember {
 } [size = 0x134]
 
 struct BattleWorkAudienceItem {
+    .0x10 = ItemType(int32) item_type;
 } [size = 0x48]
 
 struct BattleWorkBreakSlot {
@@ -2230,7 +2257,7 @@ struct BattleWorkStageHazards {
     // 0x2 = No BG A1 allowed
     // 0x4 = No BG A2 allowed
     // 0x8 = No BG B allowed
-    // 0x10 = No closing walls allowed (unused hazard?)
+    // 0x10 = No close/closing walls allowed (unused hazard preventing fleeing?)
     // 0x20 = No falling objects allowed
     .0x01c = uint8 stage_effects_allowed?
     .0x020 = uint32 bg_a1_or_b_falling_evt_id;  // may be used for other stuff
