@@ -1396,7 +1396,7 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     // 0x40'0000: Show "Merlee curse has run out" sequence?
     .0x00ef4 = uint32 unknown flags  // "onoff_battleflag"
     .0x00ef8 = uint32 unknown flags
-    .0x00efc = uint32 ?
+    .0x00efc = uint32 ?  // used in btlseqFirstAct
     .0x00f00 = int32 stored_exp;
     .0x00f04 = int32 stored_exp_displayed;
     .0x00f08 = int32 stored_exp_displayed_inc_anim_timer;
@@ -1447,10 +1447,11 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x16f5c ~ .0x1715b = BattleWorkAfterReaction[64] after_reaction_queue;
     .0x1715c ~ .0x180db = BattleWorkStageObject[32] stage_object_work;
     .0x180dc ~ .0x182cb = BattleWorkStageHazards stage_hazard_work;
-    .0x182cc ~ .0x18c8b = BattleWorkIcon icon_work;
+    .0x182cc ~ .0x18c8b = BattleWorkIcon[16] icon_work;
     
     .0x18da0 ~ .0x18ff7 = BattleWorkStatusChangeMsg status_change_msg_work;
     .0x18ff9 = int8 impending_merlee_spell;
+    .0x18ffa = uint16 ?  // frame counter for something? used in btlseqFirstAct
     
     // 0xc length struct regarding impending SP / audience, bingo card stuff...
     .0x18ffc = BattleWeapon* impending_bonus_weapon;
@@ -1462,8 +1463,10 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x19007 = int8 // copied from attack params 0x1b if stylish successful
     .0x19008 = char* weapon_ac_help_msg;  // from attack params 0x70
     
-    .0x19060 = int32[4] reserve_items;  // BattleConsumeReserveItem
+    .0x1905c = int32 lucky_start_evt_id;
+    .0x19060 = int32[4] reserve_items;    // BattleConsumeReserveItem
     
+    .0x19070 = int32 curtain_sfx_entry_idx;  // btlseqFirstAct
     .0x19074 = bool last_ac_successful?  // btlevtcmd_AudienceDeclareACResult
     
     // Likely (IMO) the remnant of some battle debugging functionality.
@@ -1481,8 +1484,9 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     // 0x80000 = force trigger bingo card (.0x1908c = card to force)?
     .0x19078 = uint32 debug_event_triggers?
     
-    .0x19088 = int?? force_monotype_audience;
-    .0x1908c = int?? bingo_card_type_to_force;
+    .0x19084 = int32 debug_audience_count;
+    .0x19088 = int32 debug_audience_monotype_kind;
+    .0x1908c = int32 debug_force_bingo_slot_type;
 } [size = 0x19098]
 
 struct BattleWorkAlliance {
@@ -1586,21 +1590,29 @@ struct BattleWorkUnit {
     .0x148 = vector3 MoveStartPos;
     .0x154 = vector3 MoveCurrentPos;
     .0x160 = vector3 MoveTargetPos;
-    .0x16c = uint32 ?  // referenced in "JumpSetting"; frame counter?
-    .0x170 = float move_speed;
-    .0x174 = float fall_accel;
-    .0x178 = float jump_speed;
-    .0x17c = float // angleABf
-    .0x180 = float // distABf
-    .0x184 = float // used in MarioJumpPosition
+    .0x16c = int32 move_frame_count;
+    .0x170 = float move_speed_xz;
+    .0x174 = float fall_accel;  // for Mario's jump, acts as a jump_angle_delta
+    .0x178 = float move_speed_y;  // for Mario's jump, acts as a jump_angle
+    .0x17c = float move_angle_xz;
+    .0x180 = float move_dist_xz;
+    // used in btlevtcmd_MarioJumpPosition; Mario's true position while jumping
+    // is offset from the straight line between current and target position
+    // by a factor of .0x184 * sin(.0x178).
+    // .0x178 changes by .0x174 * (1 + some alpha * sin(.0x1b4)) per frame,
+    // and .0x1b4 changes by .0x1b8 every frame.
+    // The higher the alpha term, the longer the jump should linger at its apex.
+    .0x184 = float jump_offset_height;
     .0x188 = int8 move_direction;
     .0x189 = int8 face_direction;  // also attack direction
     // Used in MoveSoundDataWork, LoadSeMode; params copied from .0x1c4 ~ .0x1f9
     .0x18c ~ .0x1a7 = ? 
-    .0x1a8 = vector3  // used in MarioJumpPosition
-    .0x1b4 = // used in MarioJumpPosition
-    .0x1b8 = // used in MarioJumpPosition
-    .0x1bc = // used in MarioJumpPosition
+    // .0x1a8 ~ .0x1bf = extra parameters for btlevtcmd_MarioJumpPosition
+    .0x1a8 = vector3 jump_move_per_frame;
+    .0x1b4 = float jump_angle_perturbance_angle;        // starts at 90 degrees
+    .0x1b8 = float jump_angle_perturbance_angle_delta;  // 360deg / framecount
+    // copied from move_current_pos, seemingly not used for anything?
+    .0x1bc = float jump_current_pos_y?
     .0x1c0 = ?
     // Sound information for specific actions:
     // .0x1c4~cb = uint32,32 from "SetJumpSound"
@@ -1641,7 +1653,7 @@ struct BattleWorkUnit {
     .0x2b0 = EventScript* damage_script_code;
     .0x2b4 = int32 damage_event_id;
     .0x2b8 = EventScript* entry_script_code;
-    .0x2bc = int32 ?  // entry_event_id?
+    .0x2bc = int32 entry_event_id;
     .0x2c0 = EventScript* ceiling_fall_script_code;
     .0x2c4 = int32 ceiling_fall_event_id;
     .0x2c8 = EventScript* unknown_script_code;
@@ -1675,13 +1687,20 @@ struct BattleWorkUnit {
     .0x32c = void* freeze_eff;
     .0x330 = void* biribiri_eff;
     .0x334 = void* // kagegakure-related (veil); tied to icon at .0x18?
-    // BSE_TurnFirstProcessEffectMain... (related to burn event)
-    .0x338 = int16 ?
-    .0x33a = int16 ?
-    .0x33c = int32 ?
-    .0x340 = float ?
-    .0x344 = void* fire_burn_eff?
+    // .0x338 ~ .0x347 - Related to the burn damage animation.
+    .0x338 = int16 fire_burn_state;
+    // init'd to 1, seemingly never changes in BSE_TurnFirstProcessEffectMain
+    // and skips all the logic there if not equal to 1.
+    .0x33a = int16 fire_burn_enabled?
+    .0x33c = int32 fire_burn_frame_count;
+    .0x340 = float fire_burn_eff_scale;
+    .0x344 = void* fire_burn_eff;
     .0x348 ~ .0xae7 = ? "BattleStatusIcon"-related
+    // Array of 6 structs of length 0xc:
+    // .0x0 = char statusType;
+    // .0x1 = char statusStrength;
+    // .0x3 = 
+    // .0x8 = uint32 will_have_effect;
     .0xae8 ~ .0xb2f = ? "BattleStatusChangeInfoWork"-related
     .0xb30 = int32 stage_object_id;  // used by tree/switch actors
 } [ size = 0xb34 ]
@@ -1746,14 +1765,14 @@ struct BattleWorkUnitPart {
     .0x07c = vector3 move_start_pos;
     .0x088 = vector3 move_current_pos;
     .0x094 = vector3 move_target_pos;
-    .0x0a0 = float ?  // used in FallPartsPosition
-    .0x0a4 = float move_speed;
+    .0x0a0 = int32 move_frame_count;
+    .0x0a4 = float move_speed_xz;
     .0x0a8 = float fall_accel;
-    .0x0ac = float ?  // used in FallPartsPosition
-    .0x0b0 = float ?  // used in FallPartsPosition
-    .0x0b4 = float ?  // used in FallPartsPosition
+    .0x0ac = float move_speed_y?
+    .0x0b0 = float move_angle_xz;
+    .0x0b4 = float move_dist_xz;
     
-    .0x0bc = int8 move_direction?
+    .0x0bc = int8 move_direction;
     .0x0bd = int8 face_direction / attack_direction?
     
     // Sound information for specific actions:
@@ -1869,7 +1888,7 @@ struct BattleWorkActionCommandManager {
     .0x038 ~ .0x057 = uint32[8] ac_params;  // AcSetParamAll
     .0x058 ~ ?      = uint32[?] ac_output_params;
     .0x078 ~ .0x087 = uint32[4] ac_gauge_params;  // AcSetGaugeParam
-    .0x088 ~ .0x08b = uint32? ?
+    .0x088 ~ .0x089 = int16 ?
     .0x08c ~ .0x287 = BattlePadWork ac_manager_pad_work;
     .0x288 ~ .0x28f = ?
     // Unknown, reset at the start of many action commands and seemingly
@@ -1877,7 +1896,7 @@ struct BattleWorkActionCommandManager {
     .0x290 ~ .0x2bb = BattleWorkActionCommandDispParams? ac_disp_params?
     // Used differently across a number of action commands.
     // 0x018 = float run_away_meter in bar-filling commands.
-    .0x2bc ~ .0x89b = uint32[500] ac_work;
+    .0x2bc ~ .0x89b = byte[2000] extra_work;
     // Stylish command parameters.
     .0xa8c = uint32 stylish_current_frame;
     .0xa90 = uint32 stylish_window_start;  // exclusive
@@ -1914,13 +1933,22 @@ struct BattleWorkAudience {
     // 0x40000 - turn-end phase event trigger chance does not increment;
                  CheckReactionPerPhase jumps to state F and returns 1 in state 0
     .0x00000 = uint32 flags;
+    .0x00004 = currently_executing_evt_id?
+    .0x00008 = uint32 ap_src_sfx_idx?
+    .0x0000c = void* normal_audience_tpl;  // tpl_read in BattleAudience_Init
+    .0x00010 = void*[2] guest_audience_tpls;  // 1st = Luigi, 2nd = unused?
+    .0x00018 = byte[2] guest_audience_kinds;  // 1st = 0xc (Luigi)
     
-    .0x00004 = currently_executing_event_id?
-    
-    .0x001bc = BattleWorkAudienceMember members[200];
-    .0x0f25c = BattleWorkAudienceItem items[200];
-    
-    .0x13774 = float current_audience_count;  // always integer
+    .0x001bc ~ .0x0f25b = BattleWorkAudienceMember members[200];
+    .0x0f25c ~ .0x10e7b = BattleWorkAudienceItem items[100];
+    .0x10e7c ~ .0x133fb = BattleWorkAudienceApSrc sp_stars[100];
+    .0x133fc ~ .0x1375b = BattleWorkAudienceSound sounds[24];
+    // 0x00 = uint8_t enable;  // shift onscreen if true, offscreen if false
+    //
+    // 0x08 = vector3 position;
+    // 0x14 = int32_t slide_in_timer;  // 0-15
+    // 0x18 = float audience_count_disp;  // lags behind actual count (.0x13784)
+    .0x1375c ~ .0x13777 = BattleWorkAudienceWin win_work;
     // 1-indexed lookup into 0x802f9eac (U), or 5.0 + 3.0 * Mario's level
     .0x13778 = float audience_gain_rate;
     .0x1377c = float target_audience_value;
@@ -1965,7 +1993,8 @@ struct BattleWorkAudience {
     .0x137f8 = int32 items_thrown_this_burst;  // max of 3
     // Copied from base object; notably the damage is increased by # thrown - 1
     .0x137fc = BattleWeapon item_throw_weapon_params;
-    
+    .0x138bc = int32 item_on_member_idx;
+    .0x138c0 = vector3 item_on_member_pos;
     // 0 = Require Toad (in view?); spawn item
     // 1 = Require Koopa not already in Shell mode; put in shell for 5 turns
     // 2 = Require Dull Bones; spawn a buncha items?
@@ -1986,7 +2015,8 @@ struct BattleWorkAudience {
     .0x13908 = int32 turn_end_phase_event_trigger_chance;
     // some sort of excitement level? counts up to 4 in BattleAudienceJoy
     .0x1390c = int32 audience_joy_level;
-    // if set to 1, audience jumps while idle like in a BINGO bonus mode
+    // if set to 1, audience jumps while idle like in a BINGO bonus mode;
+    // initialized to 0 at battle start
     .0x13910 = int32 ?
 } [size = 0x13914]
 
@@ -2092,8 +2122,33 @@ struct BattleWorkAudienceMember {
 } [size = 0x134]
 
 struct BattleWorkAudienceItem {
+    .0x00 = uint32 flags;
+    .0x04 = undefined4 ?
+    
+    .0x0c = uint32 audience_owner_idx;
     .0x10 = ItemType(int32) item_type;
+    .0x14 = vector3 position;
+    .0x20 = float uniform_scale;
+    .0x24 = float rotation_degrees_z;
 } [size = 0x48]
+
+struct BattleWorkAudienceApSrc {
+} [size = 0x60]
+
+struct BattleWorkAudienceSound {
+    .0x00 = uint32 flags;  // 1 = enabled
+    .0x04 = uint32 psndSfx_idx;
+    .0x08 = uint8_t sound_level;   // generally ceil(audience count / 50)
+    .0x0c = int32_t sound_length;  // if -1, plays until finished
+    .0x10 = int32_t fadeout_length;
+    .0x14 = int32_t force_fade_timer;
+    .0x18 = int32_t force_fade_length;  // if >0, starts fading .0x1e to .0x20
+    .0x1c = uint8_t base_vol;
+    .0x1d = uint8_t current_base_vol;
+    .0x1e = uint8_t vol_multiplier;
+    .0x1f = uint8_t fade_start_vol_multiplier;
+    .0x20 = uint8_t fade_end_vol_multiplier;
+} [size = 0x24]
 
 struct BattleWorkBreakSlot {
     .0x000 = uint32 ? // force shine bingo card if has 1 or 4?
@@ -2210,7 +2265,31 @@ struct BattleWorkCommand {
 } [size = 0x574]
 
 struct BattleWorkIcon {
-} [size = 0x9c0]
+    .0x00 = uint16 ?   // flags?
+    .0x02 = uint16 icon;
+    .0x04 = int32 id;  // numeric index?
+    .0x08 = vector3 position;
+    // Both of these are multiplied together for iconSetScale
+    .0x14 = float ?  // initialized to 1.0 in BtlIcon_Entry
+    .0x18 = float ?  // initialized to 1.0 in BtlIcon_Entry
+    // Looked up by table of 0x1c-length structs at icondrv::work.0x4
+    // (or icondrv::work.0xc if in battle);
+    // .0x18 contains char* lookup string (_biu_%02x % icon).
+    .0x1c = void* ?
+    // .0x20 - .0x5b all referenced in btlevtcmd_BtlIconJumpPosition
+    .0x20 = vector3 move_start_pos;
+    .0x2c = vector3 move_current_pos;
+    .0x38 = vector3 move_target_pos;
+    .0x44 = int32 move_frame_count;
+    .0x48 = float move_speed_xz;
+    .0x4c = float fall_accel;
+    .0x50 = float move_speed_y;
+    .0x54 = float move_angle_xz;  // angleABf between .0x08 and .0x38 xz
+    .0x58 = float move_dist_xz;  // distABf between .0x08 and .0x38 xz
+    
+    .0x60 = int8 move_direction;
+    
+} [size = 0x9c]
 
 struct BattleWorkPad {
     // Raw controller state for the past two polls.
@@ -2307,6 +2386,17 @@ struct BattleWorkStageObject {
 } [size = 0x7c]
 
 struct BattleWorkStatusChangeMsg {
+    // .0x0 = int8 status_type;
+    // .0x1 = int8 ?  - if unit is Mario, | 1; if partner, | 2, else, | 4
+    // .0x2 = int8 frames_to_display;
+    // .0x4 = int32 unit_idx;
+    // .0x8 = int32 will_have_effect; (if false, use max-effect message)
+    .0x000 ~ .0x14f = // struct length 0xc * 28
+    .0x150 ... = char[N] message;  // may extend all the way to .0x250
+    
+    // Set to 0 at start of battle, ~0 for Lucky Start event; unsure where else
+    .0x250 = uint32 ?  // bitfield?
+    .0x254 = uint32 ?  // bitfield?
 } [size = 0x258]
 
 struct BattleWorkWeaponTargets {
