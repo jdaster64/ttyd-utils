@@ -1667,8 +1667,8 @@ struct BattleWorkUnit {
     .0x30c = ItemDropData* held_item_table;
     // referenced in btlDispMain, unknown purpose
     .0x310 = int8 ?
-    .0x311 = int8 move_color_lv?  // maybe for darkening inactive actors?
-    .0x312 = int8 ?
+    .0x311 = uint8 move_color_lv;       // for darkening inactive actors...
+    .0x312 = uint8 move_color_lv_disp;  // for smooth transitions
     // Used for various purposes:
     // - Temporary BattleWeapon* for partner moves with varying status chance
     // - 0x300c-size struct for Stampede effects
@@ -1695,15 +1695,39 @@ struct BattleWorkUnit {
     .0x33c = int32 fire_burn_frame_count;
     .0x340 = float fire_burn_eff_scale;
     .0x344 = void* fire_burn_eff;
-    .0x348 ~ .0xae7 = ? "BattleStatusIcon"-related
+    .0x348 ~ .0xae7 = BattleWorkUnitStatusIcon status_icon_work;
     // Array of 6 structs of length 0xc:
     // .0x0 = char statusType;
     // .0x1 = char statusStrength;
     // .0x3 = 
-    // .0x8 = uint32 will_have_effect;
+    // .0x8 = uint32 will_have_effect;  // 0 if Charge is already maxed, e.g.
     .0xae8 ~ .0xb2f = ? "BattleStatusChangeInfoWork"-related
     .0xb30 = int32 stage_object_id;  // used by tree/switch actors
 } [ size = 0xb34 ]
+
+struct BattleWorkUnitStatusIcon {
+    .0x000 = vector3 position;
+    .0x00c = vector3 screen_space_offset;
+    .0x018 = float distance_between_icons;
+    .0x01c = uint32 flags;
+    // .0x00 = int32 status_type;
+    // .0x04 = int32 turns_remaining;
+    // .0x08 = int32 texture_id;
+    // .0x0c = vector3 scale;
+    // .0x18 = vector3 ? (some translation that later gets undone on y-axis?)
+    // .0x24 = vector3 rotation_degrees;
+    // .0x30 = vector3 position;
+    // .0x3c = uint8[4] color_rgba;
+    // .0x40 = uint32 flags;  (1 = uses _bsi_default_turn, no special state?)
+    .0x020 = BattleWorkUnitStatusIconEntry[28] icons;  // 0x44-length struct
+    .0x790 = float dizzy_anim_angle;     // for rotating swirl symbol
+    .0x794 = int16 num_icons;
+    .0x796 = int16 allergic_anim_timer;  // for flashing "not" symbol
+    .0x798 = int16 hp_regen_anim_timer;  // for color cycling
+    .0x79a = int16 fp_regen_anim_timer;
+    .0x79c = int16 electric_anim_state;  // for changing bolt size
+    .0x79e = int16 electric_anim_timer;
+} [ size = 0x7a0 ]
 
 struct BattleWorkUnitBadgesEquipped {
     .0x00 = close_call;
@@ -1771,10 +1795,12 @@ struct BattleWorkUnitPart {
     .0x0ac = float move_speed_y?
     .0x0b0 = float move_angle_xz;
     .0x0b4 = float move_dist_xz;
-    
+    .0x0b8 = ?  // might be unused, same amount of space as unit.0x184
     .0x0bc = int8 move_direction;
     .0x0bd = int8 face_direction / attack_direction?
-    
+    // Used in LoadSeMode; params copied from .0x0f8 ~ .0x12d
+    .0x0c0 ~ .0x0db = ?
+    .0x0dc ~ .0x0f7 = ?  // might be unused, same amount of space as unit.0x1a8
     // Sound information for specific actions:
     // .0x0f8~ff = uint32,32 from "SetPartsJumpSound"
     // .0x100~0d = uint32,32,16,16,16 from "SetPartsRunSound"
@@ -1797,25 +1823,26 @@ struct BattleWorkUnitPart {
     .0x1b8 = BattleUnitDefenseAttr* defense_attr;
     .0x1bc = void* // PoseTable* pose_table;
     .0x1c0 = int32 anim_pose_type;
-    .0x1c4 = char[?] anim_pose_name?
+    .0x1c4 = char[?] anim_pose_name;  // may extend to 0x204?
     
     .0x204 = uint32 // flags related to AnimeChangePoseDirect
-    
+    .0x208 = float ?
     .0x20c = float anime_motion_speed;
     .0x210 = void* // some sort of callback function for displaying anim poses?
-    
+    .0x214 = int8 ?
     .0x215 = int8 // flags related to AnimeChangePoseDirect
-    // Parameters for blurring?
-    .0x218 = ?         // passed as param_5 to btlUnitPartsBlurControl
-    .0x21c = ?         // flags? (.0x21c & 1) & (.0x26c & 1) unsets .0x228 0x2
-    .0x220 = int8[8]   // set by btlevtcmd_SetPartsBlur
-    .0x228 = ?         // _partsBlurControl param_3; flags?
-    .0x22c = MTX34 ?   // _partsBlurControl param_4
-    .0x25c = float ?   // _partsBlurControl param_1
-    .0x260 = ?         // _partsBlurControl param_5; copied from .0x218
-    .0x264 = int8[8] ? // copied from .0x220
-    .0x26c = ?         // flags?
-    
+    // Parameters for blurring effects
+    .0x218 = uint8[4] base_blur_color;
+    .0x21c = uint32 blur_flags; // (.0x21c & 1) & (.0x26c & 1) unsets .0x228 0x2
+    // blur[N] uses 10%*N of 2nd and rest of 1st
+    .0x220 = uint8[4][2] blur_colors;  
+    // Blur parameters used in btlUnitPartsBlurDisp; 0x44-length struct
+    // .0x00 = uint32 flags;
+    // .0x04 = MTX34 part_base_matrix;
+    // .0x34 = float rotation;
+    // .0x38 = uint8[4] base_color;
+    // .0x3c = uint8[4][2] blur_colors;
+    .0x228 ~ .0x4cf = BattleWorkUnitPartBlur[10];
     .0x4d0 = void* (?) anime_pose_sound_table;
     .0x4d4 = ?  // BtlUnit_PoseSoundInit-related
     .0x4d8 = ?  // BtlUnit_PoseSoundInit-related
@@ -1827,7 +1854,8 @@ struct BattleWorkUnitPart {
     .0x4f0 = uint8[4] color_rgba;
     // Takes into account kind part.0x34, invisible status, etc.
     .0x4f4 = uint8[4] blended_color_rgba; 
-    .0x4f8 = float ?  // used in btlDispMain
+    .0x4f8 = float ?  // used in btlDispMain; some sort of z-offset?
+    .0x4fc = int8 ?   // used in btlUnitPartsDisp; axis order to apply rotation?
 } [ size = 0x500 ]
 
 struct BattleWorkActRecord {
@@ -1966,7 +1994,7 @@ struct BattleWorkAudience {
     .0x137cc = int32 num_successive_crowd_pleasing_events;  // up to 2
     .0x137d0 = int32 num_successive_crowd_displeasing_events;  // up to 5
     .0x137d4 = int32 num_stylish_commands;  // per attack, up to 5
-    
+    .0x137d8 = ?  // unused?
     // 0 = Generally fall through to 5 
     // 5 = Check for BBB explosion, go to 6 if so or 7 otherwise (fallthrough)
     // 6, 7 = Handle BBB chain explosion, go to 8, 0xd respectively, break
@@ -1979,12 +2007,10 @@ struct BattleWorkAudience {
     // 0xc = Execute chosen eligible event, else go to state 0xf, break
     // 0xf = Do standard jump stuff / BINGO trigger, fallthrough to return 0
     .0x137dc = uint32 check_phase_reaction_state;
-    
-    // per PistonMiner; not sure how these are used?
-    .0x137e4 = int32 present_item_no;
+    .0x137e0 = uint32 check_phase_reaction_substate;
+    .0x137e4 = ItemType(int32) present_item_kind;
     .0x137e8 = int32 present_item_type;  // 0 for good item, 1 for attack
-    .0x137ec = int32 present_target_unit_id;
-    
+    .0x137ec = int32 present_target_unit_idx;
     // Also determines rate of spawning items; rand(1800), rand(6000), rand(30k)
     // for 0, 1, and 2 respectively (if slots are open), or rand(60) for frenzy
     .0x137f0 = int32 items_spawned_this_turn;
@@ -2016,8 +2042,8 @@ struct BattleWorkAudience {
     // some sort of excitement level? counts up to 4 in BattleAudienceJoy
     .0x1390c = int32 audience_joy_level;
     // if set to 1, audience jumps while idle like in a BINGO bonus mode;
-    // initialized to 0 at battle start
-    .0x13910 = int32 ?
+    // initialized to 0 at battle start, 1 upon choosing a stat during levelup.
+    .0x13910 = int32 audience_excited;
 } [size = 0x13914]
 
 struct BattleWorkAudienceMember {
@@ -2054,7 +2080,8 @@ struct BattleWorkAudienceMember {
     // 0x15 = ?
     .0x019 = int8 status;
     // set to param1 of .0x028 type -2; TEXGetGXTexObjFromPalette param_3
-    .0x01a = uint8 ?
+    // perhaps determines which graphics to use from the appropriate tpl?
+    .0x01a = uint8 tpl_palette_idx?
     // 0 = Toad
     // 1 = X-Naut
     // 2 = Boo
@@ -2123,16 +2150,37 @@ struct BattleWorkAudienceMember {
 
 struct BattleWorkAudienceItem {
     .0x00 = uint32 flags;
-    .0x04 = undefined4 ?
-    
+    .0x04 = int32 state;
+    .0x08 = int32 state_timer;
     .0x0c = uint32 audience_owner_idx;
     .0x10 = ItemType(int32) item_type;
     .0x14 = vector3 position;
     .0x20 = float uniform_scale;
     .0x24 = float rotation_degrees_z;
+    .0x28 = vector3 velocity;
+    .0x34 = vector3 accel;
+    .0x40 = BattleWorkUnit* target;
+    .0x44 = uint32 ?  // something to do w/whether the item is interactable?
 } [size = 0x48]
 
 struct BattleWorkAudienceApSrc {
+    .0x00 = uint32_t flags;
+    .0x04 = int32 state;
+    .0x08 = vector3 position;
+    .0x14 = vector3 ?  // unused?
+    // For moving to a random start position.
+    .0x20 = vector3 move_start_pos;
+    .0x2c = vector3 move_target_pos;
+    .0x38 = vector3 scale;
+    // Used for start position and swirling.
+    .0x44 = int32 move_timer;
+    .0x48 = int32 move_total_time;
+    // For swirling toward the status bar.
+    .0x4c = float dist_current_to_status_bar;
+    .0x50 = float dist_start_to_status_bar;
+    .0x54 = float angle_to_status_bar;  // init to asin(x_dist / total_dist)
+    .0x58 = float delta_angle_to_status_bar;  // 0.05 + rand(0.20) radians
+    .0x5c = byte alpha;
 } [size = 0x60]
 
 struct BattleWorkAudienceSound {
