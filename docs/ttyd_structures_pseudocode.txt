@@ -1605,8 +1605,7 @@ struct BattleWorkUnit {
     .0x184 = float jump_offset_height;
     .0x188 = int8 move_direction;
     .0x189 = int8 face_direction;  // also attack direction
-    // Used in MoveSoundDataWork, LoadSeMode; params copied from .0x1c4 ~ .0x1f9
-    .0x18c ~ .0x1a7 = ? 
+    .0x18c ~ .0x1a7 = BattleWorkMoveSoundControl move_sound_control_work; 
     // .0x1a8 ~ .0x1bf = extra parameters for btlevtcmd_MarioJumpPosition
     .0x1a8 = vector3 jump_move_per_frame;
     .0x1b4 = float jump_angle_perturbance_angle;        // starts at 90 degrees
@@ -1614,12 +1613,7 @@ struct BattleWorkUnit {
     // copied from move_current_pos, seemingly not used for anything?
     .0x1bc = float jump_current_pos_y?
     .0x1c0 = ?
-    // Sound information for specific actions:
-    // .0x1c4~cb = uint32,32 from "SetJumpSound"
-    // .0x1cc~d9 = uint32,32,16,16,16 from "SetRunSound"
-    // .0x1dc~e9 = uint32,32,16,16,16 from "SetWalkSound"
-    // .0x1ec~f9 = uint32,32,16,16,16 from "SetDiveSound"
-    .0x1c4 ~ .0x1f9 = ? 
+    .0x1c4 ~ .0x1f9 = BattleWorkMoveSoundData move_sound_data_table;
     .0x1fc ~ .0x217 = ? "HpGauge"-related
     // various parameters referenced as "UnitWork" in scripts;
     // first four initialized from BattleUnitSetup.0x1c ~ 0x2b
@@ -1704,6 +1698,39 @@ struct BattleWorkUnit {
     .0xae8 ~ .0xb2f = ? "BattleStatusChangeInfoWork"-related
     .0xb30 = int32 stage_object_id;  // used by tree/switch actors
 } [ size = 0xb34 ]
+
+struct BattleWorkMoveSoundControl {
+    .0x00 = char* sound_name_left;
+    .0x04 = char* sound_name_right;
+    .0x08 = int16 ?  // param_7 to BtlUnit_SetSeMode; unused?
+    .0x0a = int16 ?  // param_8 to BtlUnit_SetSeMode; unused?
+    .0x0c = int16 initial_wait_timer;
+    .0x0e = int16 repeat_wait_timer_left;
+    .0x10 = int16 repeat_wait_timer_right;
+    .0x12 = int16 current_timer;
+    .0x14 = int16 sound_to_play_next;  // parity decides left or right
+    .0x18 = int32 psndSfx_idx;
+} [ size = 0x1c ]
+
+struct BattleWorkMoveSoundData {
+    .0x00 = char* jump_sound_left;
+    .0x04 = char* jump_sound_right;
+    .0x08 = char* run_sound_left;
+    .0x0c = char* run_sound_right;
+    .0x10 = int16 run_initial_wait_timer;
+    .0x12 = int16 run_repeat_wait_timer_left;
+    .0x14 = int16 run_repeat_wait_timer_right;
+    .0x18 = char* walk_sound_left;
+    .0x1c = char* walk_sound_right;
+    .0x20 = int16 walk_initial_wait_timer;
+    .0x22 = int16 walk_repeat_wait_timer_left;
+    .0x24 = int16 walk_repeat_wait_timer_right;
+    .0x28 = char* dive_sound_left;
+    .0x2c = char* dive_sound_right;
+    .0x30 = int16 dive_initial_wait_timer;
+    .0x32 = int16 dive_repeat_wait_timer_left;
+    .0x34 = int16 dive_repeat_wait_timer_right;
+} [ size = 0x38 ]
 
 struct BattleWorkUnitStatusIcon {
     .0x000 = vector3 position;
@@ -1798,15 +1825,9 @@ struct BattleWorkUnitPart {
     .0x0b8 = ?  // might be unused, same amount of space as unit.0x184
     .0x0bc = int8 move_direction;
     .0x0bd = int8 face_direction / attack_direction?
-    // Used in LoadSeMode; params copied from .0x0f8 ~ .0x12d
-    .0x0c0 ~ .0x0db = ?
+    .0x0c0 ~ .0x0db = BattleWorkMoveSoundControl move_sound_control_work;
     .0x0dc ~ .0x0f7 = ?  // might be unused, same amount of space as unit.0x1a8
-    // Sound information for specific actions:
-    // .0x0f8~ff = uint32,32 from "SetPartsJumpSound"
-    // .0x100~0d = uint32,32,16,16,16 from "SetPartsRunSound"
-    // .0x110~1d = uint32,32,16,16,16 from "SetPartsWalkSound"
-    // .0x120~2d = uint32,32,16,16,16 from "SetPartsDiveSound"
-    .0x0f8 ~ .0x12d = ? 
+    .0x0f8 ~ .0x12d = BattleWorkMoveSoundData move_sound_data_table;
     .0x130 ~ ... = uint32[N] parts_work;  // may extend to 0x170?
     
     .0x170 = vector3 hit_base_pos?  // assigned from parts.0x18
@@ -1845,10 +1866,10 @@ struct BattleWorkUnitPart {
     .0x228 ~ .0x4cf = BattleWorkUnitPartBlur[10];
     .0x4d0 = void* (?) anime_pose_sound_table;
     .0x4d4 = ?  // BtlUnit_PoseSoundInit-related
-    .0x4d8 = ?  // BtlUnit_PoseSoundInit-related
-    .0x4dc = ?  // BtlUnit_PoseSoundInit-related
+    .0x4d8 = float ?  // BtlUnit_PoseSoundInit-related
+    .0x4dc = float ?  // BtlUnit_PoseSoundInit-related
     .0x4e0 = ?  // BtlUnit_ControlPoseSoundMain-related
-    .0x4e4 = ?  // BtlUnit_ControlPoseSoundMain-related
+    .0x4e4 = uint8 ?  // BtlUnit_ControlPoseSoundMain-related
     .0x4e8 = int ?  // Set/checked for -1 in BtlUnit_Entry/Delete
     .0x4ec = BattleWorkUnit* battle_unit_owner;
     .0x4f0 = uint8[4] color_rgba;
@@ -2324,6 +2345,7 @@ struct BattleWorkIcon {
     // (or icondrv::work.0xc if in battle);
     // .0x18 contains char* lookup string (_biu_%02x % icon).
     .0x1c = void* ?
+    // .0x20 ~ end may be same struct as the move params in BtlUnit(Parts)?
     // .0x20 - .0x5b all referenced in btlevtcmd_BtlIconJumpPosition
     .0x20 = vector3 move_start_pos;
     .0x2c = vector3 move_current_pos;
