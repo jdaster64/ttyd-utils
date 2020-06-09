@@ -959,10 +959,9 @@ struct BattleGroupSetup {
 struct BattleUnitSetup {
     .0x00 = BattleUnitKind* unit_kind_params;
     .0x04 = int8 ally_status;
-    .0x05 ~ .0x07 = ?
     .0x08 = int32 attack_phase;  // seemingly always 0x400'0004 for enemies
     .0x0c = vector3 position;
-    .0x18 = uint32 ?
+    .0x18 = uint32 addl_target_offset_x;
     // defaults for various parameters specific to the enemy used in scripts;
     // e.g. UW(0) = alternate forms for Buzzies, Magikoopas, SQ...
     .0x1c ~ .0x2b = uint32 battle_unit_work[4];
@@ -1450,9 +1449,9 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x182cc ~ .0x18c8b = BattleWorkIcon[16] icon_work;
     
     .0x18da0 ~ .0x18ff7 = BattleWorkStatusChangeMsg status_change_msg_work;
+    .0x18ff8 = ?
     .0x18ff9 = int8 impending_merlee_spell;
     .0x18ffa = uint16 ?  // frame counter for something? used in btlseqFirstAct
-    
     // 0xc length struct regarding impending SP / audience, bingo card stuff...
     .0x18ffc = BattleWeapon* impending_bonus_weapon;
      // 0.5 + 0.25 * btlevtcmd_AudienceDeclareACResult (AC level; 2 = Nice, e.g.)
@@ -1462,13 +1461,12 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x19006 = int8 // copied from attack params 0x1a
     .0x19007 = int8 // copied from attack params 0x1b if stylish successful
     .0x19008 = char* weapon_ac_help_msg;  // from attack params 0x70
+    .0x1900c = uint32 battle_ac_help_disp_type;
     
     .0x1905c = int32 lucky_start_evt_id;
     .0x19060 = int32[4] reserve_items;    // BattleConsumeReserveItem
-    
     .0x19070 = int32 curtain_sfx_entry_idx;  // btlseqFirstAct
-    .0x19074 = bool last_ac_successful?  // btlevtcmd_AudienceDeclareACResult
-    
+    .0x19074 = bool last_ac_successful;  // btlevtcmd_AudienceDeclareACResult
     // Likely (IMO) the remnant of some battle debugging functionality.
     // 1 = force trigger object fall
     // 2 = force trigger object to hit audience
@@ -1834,7 +1832,8 @@ struct BattleWorkUnitPart {
     .0x17c = vector3 hit_offset;
     .0x188 = vector3 hit_cursor_base_pos?  // assigned from parts.0x24
     .0x194 = vector3 hit_cursor_offset;
-    .0x1a0 = int16 ?
+    // from BattleUnitSetup.0x18; hitOffsetX used for Grodus
+    .0x1a0 = int16 addl_target_offset_x;
     .0x1a2 = int16 ?  // assigned from parts.0x30; some sort of scale?
     .0x1a4 = int16 ?  // assigned from parts.0x32
     
@@ -2220,25 +2219,34 @@ struct BattleWorkAudienceSound {
 } [size = 0x24]
 
 struct BattleWorkBreakSlot {
-    .0x000 = uint32 ? // force shine bingo card if has 1 or 4?
+    .0x000 = uint32 flags; // force shine bingo card if has 1 or 4?
+    .0x004 = int32 state;
+    .0x008 = // substate / timer?
     .0x00c = int32 slot;
     .0x010 = int32 active_bingo_turn_count;  // 4 turns for M/F/St, 6 for Shine
     .0x014 = float active_bingo_sp_multiplier;  // 2x for M/F/St, 3x for Shine
     .0x018 ~ .0x12b = BattleWorkBreakSlotReel[3] reels;
+    .0x12c = int32 psndsfx_idx;
+    .0x130 = void* evt_entry;
 } [size = 0x134]
 
 struct BattleWorkBreakSlotReel {
-    .0x000 = int32 index;
-    .0x004 = int32 ? // animation state?
-    .0x008 = int32 ? // state / is active?
-    .0x00c = int32 ?
-    .0x010 = int32 icon;
+    .0x00 = int32 index;
+    .0x04 = int32 flags;
+    .0x08 = int32 ?  // state?
+    .0x0c = int32 ?  // substate / timer?
+    .0x10 = int32 icon;
     // 2x 0,1,2 and 1x 3,4 for the first 2 reels; one of each for the third
-    .0x014 = int32* possible_icons;
-    .0x018 = int32 num_possible_icons;  // 8 for first two, 5 for last
-    .0x01c = vector3 icon_position;
-    
-    .0x034 = vector3 icon_scale;
+    .0x14 = int32* possible_icons;
+    .0x18 = int32 num_possible_icons;  // 8 for first two, 5 for last
+    .0x1c = int32 possible_icons_idx;  // index into .0x14
+    .0x20 = vector3 icon_position;
+    .0x2c = vector3 icon_rotation;
+    .0x38 = vector3 icon_scale;
+    .0x44 = vector3 ?  // some sort of translation; y and z axes get undone
+    .0x50 = float ?
+    .0x54 = float ?
+    .0x58 = uint8 ?
 } [size = 0x5c]
 
 struct BattleWorkCamera {
@@ -2485,16 +2493,17 @@ struct BattleWorkWeaponTargets {
 struct BattleWorkTarget {
     .0x00 = int16 unit_index;
     .0x02 = int16 part_index;  // one-indexed
-    .0x04 = int16 unk_pos1_x;
-    .0x06 = int16 unk_pos1_y;
-    .0x08 = int16 unk_pos1_z;
-    .0x0a = padding?
-    .0x0c = vecFloat3 unk_pos2;
-    .0x18 = ?
+    .0x04 = int16 hit_cursor_pos_x;
+    .0x06 = int16 hit_cursor_pos_y;
+    .0x08 = int16 hit_cursor_pos_z;
+    .0x0c = int32 final_pos_x;  // .0x04 + .0x18
+    .0x10 = int32 final_pos_y;  // .0x06
+    .0x14 = int32 final_pos_z;  // .0x08 + 5.0
+    // part.0x1a0 * faceDirection, for some flags + 300 * attackDirection
+    .0x18 = int32 addl_offset_x;
     .0x1c = uint32 forward_distance;  // 0 to 48; higher = farther away
-    .0x1d = bool fg_or_bg_layer;  // rel. z-position greater than -30 = fg
-    .0x1e-1f = padding?
-    .0x20 = ?
+    .0x1d = bool fg_or_bg_layer;  // .0x14 greater than -30 = fg
+    .0x20 = int32 ?  // init to -1 in BattleSamplingEnemy; unused?
 } [size = 0x24]
 
 // Native controller state structure.
