@@ -1841,6 +1841,7 @@ struct BattleWorkUnitPart {
     .0x1b0 = PartsCounterAttribute_Flags property_flags;
     .0x1b4 = BattleUnitDefense* defense;
     .0x1b8 = BattleUnitDefenseAttr* defense_attr;
+    // .0x1bc ~ .0x217 related to animation.
     .0x1bc = void* // PoseTable* pose_table;
     .0x1c0 = int32 anim_pose_type;
     .0x1c4 = char[?] anim_pose_name;  // may extend to 0x204?
@@ -1851,7 +1852,7 @@ struct BattleWorkUnitPart {
     .0x210 = void* // some sort of callback function for displaying anim poses?
     .0x214 = int8 ?
     .0x215 = int8 // flags related to AnimeChangePoseDirect
-    // Parameters for blurring effects
+    // .0x218 ~ .0x4cf = Parameters for blurring effects.
     .0x218 = uint8[4] base_blur_color;
     .0x21c = uint32 blur_flags; // (.0x21c & 1) & (.0x26c & 1) unsets .0x228 0x2
     // blur[N] uses 10%*N of 2nd and rest of 1st
@@ -1863,12 +1864,13 @@ struct BattleWorkUnitPart {
     // .0x38 = uint8[4] base_color;
     // .0x3c = uint8[4][2] blur_colors;
     .0x228 ~ .0x4cf = BattleWorkUnitPartBlur[10];
+    // .0x4d0 ~ .0x4e7 related to BtlUnit_ControlPoseSoundMain
     .0x4d0 = void* (?) anime_pose_sound_table;
-    .0x4d4 = ?  // BtlUnit_PoseSoundInit-related
-    .0x4d8 = float ?  // BtlUnit_PoseSoundInit-related
-    .0x4dc = float ?  // BtlUnit_PoseSoundInit-related
-    .0x4e0 = ?  // BtlUnit_ControlPoseSoundMain-related
-    .0x4e4 = uint8 ?  // BtlUnit_ControlPoseSoundMain-related
+    .0x4d4 = int32 ?  //
+    .0x4d8 = float ?  //
+    .0x4dc = float ?  //
+    .0x4e0 = int32 ?  //
+    .0x4e4 = uint8 ?  //
     .0x4e8 = int ?  // Set/checked for -1 in BtlUnit_Entry/Delete
     .0x4ec = BattleWorkUnit* battle_unit_owner;
     .0x4f0 = uint8[4] color_rgba;
@@ -2585,7 +2587,8 @@ struct marioSt ("GameGlobals") {
     .0x00d0 = int16_t hll_fourth_prize_days_remaining;  // expected 4-10
     .0x012c = char current_map[16];
     .0x013c = char current_area[16];
-    .0x0160 = void* loaded_rel_ptr;
+    .0x015c = void* current_rel_ptr;
+    .0x0160 = void* map_rel_ptr;  // Used for all maps other than the Pit
     .0x0168 = void* fbat_ptr;  (.0x08 = NpcWork)
     .0x0178 = char gswfData[1024];
     .0x0578 = char gswData[2048];  // Pit of 100 trials floor = .0xaa1
