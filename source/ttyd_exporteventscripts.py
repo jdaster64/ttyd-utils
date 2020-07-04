@@ -37,17 +37,22 @@ def _ParseScript(df_row):
     sym_area = "tik" if area == "_MS" else area
     eventname = df_row["eventname"]
     symbol_file = FLAGS.GetFlag("ttydasm_symbols_pattern").replace("*",sym_area)
+    ram_filepath = FLAGS.GetFlag("input_ram_pattern").replace("*", sym_area)
+    if not os.path.exists(ram_filepath):
+        print("Skipping event %s_%s (no RAM dump)" % (area, eventname,))
+        return
+    else:
+        print("Parsing event %s_%s" % (area, eventname,))
     outfile = codecs.open(
         os.path.join(
             FLAGS.GetFlag("output_dir"), "%s_%s.txt" % (area, eventname)
         ), "w", encoding="utf-8")
-    print("Parsing event %s_%s" % (area, eventname,))
     subprocess.check_call([
         FLAGS.GetFlag("ttydasm_exe"),
         "--base-address=0x80000000",
         "--start-address=0x%x" % (df_row["address"],),
         "--symbol-file=%s" % (symbol_file,),
-        FLAGS.GetFlag("input_ram_pattern").replace("*", sym_area)],
+        ram_filepath],
         stdout=outfile)
     outfile.flush()
             
