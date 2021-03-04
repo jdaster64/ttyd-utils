@@ -1,22 +1,28 @@
-### Jdaster64's PM:TTYD Utils & Docs
+### Jdaster64's PM:TTYD Utils & Docs (latest update: 2021-03-04)
 
 ### Credits
 * **PistonMiner** for the TTYD scripting disassembly tool, ttydasm. (GitHub repo [here](https://github.com/PistonMiner/ttyd-tools).)
 * PistonMiner and **Zephiles** for their contributions to the symbol maps, including nearly all of the main binary's .text symbols.
+* Both of the above, **Jasper**, **SolidifiedGaming**, and others who've helped with TTYD documentation elsewhere.
 
 ### Contents
-* **docs**: 
+* **docs**:
   * **ttyd_structures_pseudocode** - Notes on various TTYD structure layouts / enums, mostly for battle-related stuff.
 * **resources**:
-  * A dump from a curated table of symbol diffs between the JP demo and US retail versions of TTYD, used to locate individual functions / data / class instances, and to power the various Python scripts. (Will be updated in the future by myself and others, and will hopefully eventually have equivalent coverage for PAL / JP in the future.)
+  * **us_symbols.csv** - A near-complete symbol table for the US retail version of TTYD, including some type information (including marking ~all evts).
+  * A dump from an old curated table of symbol diffs between the JP demo and US retail versions of TTYD, used to locate individual functions / data / class instances (was used for older Python scripts
   * Text files containing TTYD's battle units' and items' names in ID order, one per line.
 * **source**:
   * **jdalibpy**:
-    * General command-line flag (**flags**) & binary memory view (**bindump**) utilities.
+    * General command-line flag (**flags**) & binary memory view utilities (**bindatastore**, and its crustier brother **bindump** for the old utils).
     * A couple unrelated tools I use occasionally on the command-line:
       * **conv** - Converts between various numeric and datetime formats.
       * **rngutil** - Simulates TTYD's (and a few other games') random number generators.
-  * **ttyd_exporteventscripts** - Exports all labeled EventScripts in a symbol diffs file using PistonMiner's ttydasm tool.
-  * **ttyd_extractclassdata** - Exports CSVs of all the instances of various class types from symbol diffs and TTYD RAM snapshots.
-  * **ttyd_generatesymbolmaps** - Exports MAP files and ttydasm symbol files per area of TTYD from symbol diffs.
-  * **ttyd_maplib** - A library of common functions used by the above utilities.
+  * **TTYD utility scripts**: (explained more fully in source/README.md)
+    * **dump_sections** - Provided .dol/.rel files from TTYD, dumps their individual sections.
+    * **symbol_to_maps** - Converts a symbol table to .MAP files and symbol files for PistonMiner's *ttydasm* tool.
+    * **extract_events** - Exports all labeled evts in a symbol table to text files using *ttydasm*.
+    * **extract_classes** - Exports all labeled instances of various structures to .csv files, one for their fields and one for byte representations.
+    * **map_to_symbols**, **annotate_map_symbols** - For converting existing .MAP files for other versions of TTYD (e.g. the JP demo) to symbol tables, for use with the other scripts.
+  * **old_utils**:
+    * Were used for some of the same purposes as the newer utilities, but much messier and generally less fully-featured.

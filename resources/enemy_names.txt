@@ -4,7 +4,7 @@ Paragoomba
 Spiky Goomba
 Spinia
 Spania
-Lord Crump [1]
+Lord Crump (Prologue)
 Gus
 Blooper
 Left Tentacle
@@ -29,8 +29,8 @@ Pider
 X-Naut
 Yux
 Mini-Yux
-Beldam [1]
-Marilyn [1]
+Beldam (Ch. 2)
+Marilyn (Ch. 2)
 Vivian
 Magnus
 X-Fist
@@ -61,7 +61,7 @@ Red Chomp
 D. Koopatrol
 Iron Cleft 1
 Iron Cleft 2
-Bowser [1]
+Bowser (Ch. 3)
 Rawk Hawk
 Macho Grubba
 Hyper Goomba
@@ -75,13 +75,13 @@ Spike Top
 Swooper
 Boo
 Atomic Boo
-Doopliss [1]
-Doopliss [inv.]
-Doopliss [2]
-Goombella
-Koops
-Yoshi
-Flurrie
+Doopliss (Ch. 4, first)
+Doopliss (Ch. 4, invincible)
+Doopliss (Ch. 4, second)
+Goombella (Ch. 4)
+Koops (Ch. 4)
+Yoshi (Ch. 4)
+Flurrie (Ch. 4)
 Ember
 Lava Bubble
 Green Fuzzy
@@ -97,7 +97,7 @@ Cortez Sword
 Cortez Claw
 Cortez Rapier
 Cortez Saber
-Lord Crump [2]
+Lord Crump (Ch. 5)
 X-Nauts [1]
 X-Nauts [2]
 X-Nauts [3]
@@ -131,24 +131,24 @@ Dark Wizzerd (fake)
 Dry Bones
 Dark Bones
 Gloomtail
-Beldam [2]
-Marilyn [2]
-Doopliss [3]
-88 (Doop[3] 1?)
-89 (Doop[3] 2?)
-8A (Doop[3] 3?)
-8B (Doop[3] 4?)
-8C (Doop[3] 5?)
-8D (Doop[3] 6?)
-8E (Doop[3] 7?)
-8F (Doop[3] 8?)
-Bowser [2]
+Beldam (Ch. 8)
+Marilyn (Ch. 8)
+Doopliss (Ch. 8)
+Doopliss (Ch. 8, Fake Mario)
+Doopliss (Ch. 8, Goombella)
+Doopliss (Ch. 8, Koops)
+Doopliss (Ch. 8, Yoshi)
+Doopliss (Ch. 8, Flurrie)
+Doopliss (Ch. 8, Vivian)
+Doopliss (Ch. 8, Bobbery)
+Doopliss (Ch. 8, Ms. Mowz)
+Bowser (Ch. 8)
 Kammy Koopa
 Grodus
 Grodus X
-Shadow Queen [1]
-Shadow Queen [1] (Inv.)
-Shadow Queen [2]
+Shadow Queen (First phase)
+Shadow Queen (Invincible phase)
+Shadow Queen (Second phase)
 L/R Hand
 Dead Hands
 Gloomba
@@ -219,7 +219,7 @@ Bonetail
 [Unused Test NPC]
 Bomb-Squad Bomb
 System
-[Prologue Goombella]
+[Prologue NPC Goombella]
 Mario
 Shell Shield
 Goombella
