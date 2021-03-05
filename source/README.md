@@ -90,7 +90,8 @@ The exact files produced are:
 ```
 symbol_to_maps.py \
   --out_path=YOUR_OUTPUT_PATH \
-  --symbols_path=PATH_TO_YOUR_SYMBOLS_FILE.csv
+  --symbols_path=PATH_TO_YOUR_SYMBOLS_FILE.csv \
+  --rel_bss_address=0x80a00000
 ```
 
 #### Step 4. Export evt scripts to text files using ttydasm.
