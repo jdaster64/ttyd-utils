@@ -1463,6 +1463,9 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x19008 = char* weapon_ac_help_msg;  // from attack params 0x70
     .0x1900c = uint32 battle_ac_help_disp_type;
     
+    .0x19050 = int32 mario_jump_disabled_turns;
+    .0x19054 = int32 mario_hammer_disabled_turns;
+    .0x19058 = int32 mario_items_disabled_turns;
     .0x1905c = int32 lucky_start_evt_id;
     .0x19060 = int32[4] reserve_items;    // BattleConsumeReserveItem
     .0x19070 = int32 curtain_sfx_entry_idx;  // btlseqFirstAct
@@ -1582,7 +1585,8 @@ struct BattleWorkUnit {
     // 0x1000'0000 = InDanger
     // 0x2000'0000 = InPeril
     .0x138 = uint32 status_flags;
-    
+    .0x13c = int16 party_move_disabled_turns;
+    .0x13e = int16 party_item_disabled_turns;
     .0x140 = uint32 protect_unit_idx? // SetGuard / GetProtectId; shell shield?
     .0x144 = StatusVulnerability* status_vulnerability;
     .0x148 = vector3 MoveStartPos;
