@@ -52,6 +52,9 @@ dump_sections.py \
   --rel_bss_address=0x80a00000
 ```
 
+* *NOTE: --rel must be specified as a relative path, and should contain a
+   single \* wildcard.*
+
 #### Step 2. If necessary, convert your externally-sourced .MAP files to a symbol table.
 
 * **NOTE:** *You can skip this step if using the already-provided **resources/us_symbols.csv** file.*
@@ -70,6 +73,9 @@ map_to_symbols.py \
 
 annotate_map_symbols.py --out_path=YOUR_OUTPUT_PATH
 ```
+
+* *NOTE: --rel_map must be specified as a relative path, and should contain a
+   single \* wildcard.*
 
 #### Step 3. Export .MAP files and ttydasm symbol files using the symbol table.
 
