@@ -102,7 +102,7 @@ symbol_to_maps.py \
 
 #### Step 4. Export evt scripts to text files using ttydasm.
 
-The **extract_events** utility takes the ttydasm symbol files and dumped
+The **export_events** utility takes the ttydasm symbol files and dumped
 sections, and uses PistonMiner's *ttydasm* tool to produce text dumps of
 all symbols labeled with the "evt" type in the provided symbols csv.
 
@@ -124,7 +124,7 @@ correctly labeled.
 
 **Sample invocation:**
 ```
-extract_events.py \
+export_events.py \
   --out_path=YOUR_OUTPUT_PATH \
   --symbols_path=PATH_TO_YOUR_SYMBOLS_FILE.csv \
   --ttydasm_exe=PATH_TO_TTYDASM.exe
@@ -132,9 +132,9 @@ extract_events.py \
 
 #### Step 5. Export instances of certain C data types to .csv files.
 
-The **extract_classes** utility takes the dumped section info from Step 1,
+The **export_classes** utility takes the dumped section info from Step 1,
 and produces .csv dumps containing the field values and bytewise representation
-of all instances of the class types supported in **extract_classes_parsers**.
+of all instances of the class types supported in **export_classes_parsers**.
 
 Note that by default nothing will be exported if you're using the
 **annotated_symbols.csv** file provided in Step 2; currently none of the
@@ -169,6 +169,7 @@ BattleWeapon
 CookingRecipe
 ItemData
 ItemDropData
+NpcAiTypeTable
 PointDropData
 ShopItemTable
 ShopSellPriceList
@@ -177,7 +178,7 @@ StatusVulnerability
 
 **Sample invocation:**
 ```
-extract_classes.py \
+export_classes.py \
   --out_path=YOUR_OUTPUT_PATH \
   --symbols_path=PATH_TO_YOUR_SYMBOLS_FILE.csv
 ```

@@ -598,6 +598,19 @@ g_StructDefs = {
             FieldMetadata(4, "hold_weight", bd.BDType.S16),
             FieldMetadata(6, "drop_weight", bd.BDType.S16),
         ]),
+    "NpcAiTypeTable": StructMetadata(
+        "NpcAiTypeTable", 0x24, array=ZERO_TERMINATED,
+        fields=[
+            FieldMetadata(0x00, "item_id", bd.BDType.CSTRING),
+            FieldMetadata(0x04, "flags", bd.BDType.U32),
+            FieldMetadata(0x08, "init_event", bd.BDType.POINTER),
+            FieldMetadata(0x0c, "move_event", bd.BDType.POINTER),
+            FieldMetadata(0x10, "dead_event", bd.BDType.POINTER),
+            FieldMetadata(0x14, "find_event", bd.BDType.POINTER),
+            FieldMetadata(0x18, "lost_event", bd.BDType.POINTER),
+            FieldMetadata(0x1c, "return_event", bd.BDType.POINTER),
+            FieldMetadata(0x20, "blow_event", bd.BDType.POINTER),
+        ]),
     "PointDropData": StructMetadata(
         "PointDropData", 0x10, array=5,
         fields=[
