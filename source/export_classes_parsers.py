@@ -601,7 +601,7 @@ g_StructDefs = {
     "NpcAiTypeTable": StructMetadata(
         "NpcAiTypeTable", 0x24, array=ZERO_TERMINATED,
         fields=[
-            FieldMetadata(0x00, "item_id", bd.BDType.CSTRING),
+            FieldMetadata(0x00, "ai_type_name", bd.BDType.CSTRING),
             FieldMetadata(0x04, "flags", bd.BDType.U32),
             FieldMetadata(0x08, "init_event", bd.BDType.POINTER),
             FieldMetadata(0x0c, "move_event", bd.BDType.POINTER),
