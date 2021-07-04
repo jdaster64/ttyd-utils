@@ -182,3 +182,74 @@ export_classes.py \
   --out_path=YOUR_OUTPUT_PATH \
   --symbols_path=PATH_TO_YOUR_SYMBOLS_FILE.csv
 ```
+
+### Additional Tools
+
+#### combine_rels
+
+The **combine_rels** utility can be used to construct a new relocatable file
+composed of combinations of symbols from TTYD's original REL files.  This could
+then be used in TTYD mods by adding it into a rebuilt ISO, or loaded from the
+memory card using PistonMiner's REL framework.
+
+The utility requires a dump of all the original .REL files that you wish to use,
+as well as a text file with newline-delimited data ranges or symbol names to
+include. (If using symbol names, you must also provide a symbol info .csv,
+such as the **resources/us_symbols.csv** file in this repo for the US version).
+
+If successful, the utility will output the combined REL, as well as a CSV file
+that provides info on where the symbols / ranges are located in the new REL.
+
+The utility will throw an error if a requested symbol matches multiple entries
+in the provided symbol info file, or if a requested symbol / range has linking
+dependencies that were not also included in the requested ranges. (Currently,
+the utility does not have any functionality for looking up dependencies
+proactively, but it should be able to detect if any are missing.)
+
+Symbols of alignment greater than 4 for the .text section or 8 for the .rodata,
+and .data, .bss sections are not supported, nor are sections other than
+.text, .rodata, .data, and .bss with indices 1, 4, 5 and 6.
+
+Example invocation for symbol names:
+
+```
+combine_rels.py \
+  --out_path=YOUR_OUTPUT_PATH \
+  --rel=PATH_TO_YOUR_REL_FOR_AREA_*.rel \
+  --symbol_info=PATH_TO_YOUR_SYMBOLS_FILE.csv \
+  --symbol_names=SYMBOL_NAMES_PATH.txt
+  
+SYMBOL_NAMES_PATH.txt contents:
+
+# All symbols related to Piranha Plant unit in MRI rel.
+mri:unit_pakkun_flower.o:*
+# All symbols related to Ember unit in MUJ rel.
+muj:unit_hermos.o:*
+# BattleGroupSetup information for an Ember fight in MUJ.
+muj:battle_database_muj.o:btlparty_muj_muj_05_01
+
+```
+
+Example invocation for symbol ranges:
+
+```
+combine_rels.py \
+  --out_path=YOUR_OUTPUT_PATH \
+  --rel=PATH_TO_YOUR_REL_FOR_AREA_*.rel \
+  --symbol_ranges=SYMBOL_RANGES_PATH.txt
+  
+SYMBOL_RANGES_PATH.txt contents:
+
+# All symbols related to Piranha Plant unit in MRI rel.
+mri:1:0001ee0c-0001f09c
+mri:4:00006ce8-00006ea8
+mri:5:00032598-00033758
+# All symbols related to Ember unit in MUJ rel.
+muj:1:0000bcbc-0000c18c
+muj:4:000064a0-00006684
+muj:5:00039af0-0003b694
+muj:6:00000070-000000c4
+# BattleGroupSetup information for an Ember fight in MUJ.
+muj:5:00020a78-00020b08
+
+```
