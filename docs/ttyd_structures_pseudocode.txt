@@ -53,7 +53,7 @@ enum AttackTargetClass_Flags {
     0x100 = CannotTargetOppositeAlliance
     0x200 = CannotTargetOwnAlliance
     0x1000 = CannotTargetSelf
-    0x2000 = OnlyTargetSelfOrSameSpecies
+    0x2000 = CannotTargetSameSpecies
     0x4000 = OnlyTargetSelf
     0x10'0000 = OnlyTargetPreferredParts (must have parts attribute 0x1/0x2)
     0x20'0000 = OnlyTargetSelectParts (must have parts attribute 0x1/0x2/0x4)
@@ -88,7 +88,7 @@ enum AttackTargetWeighting_Flags {
     0x4 = PreferFront
     0x8 = PreferBack
     0x10 = PreferSameAlliance
-    0x20 = PreferSameAllianceButNot2
+    0x20 = PreferOppositeAlliance
     0x100 = PreferLessHealthy
     0x200 = GreatlyPreferLessHealthy
     0x400 = PreferLowerHP
