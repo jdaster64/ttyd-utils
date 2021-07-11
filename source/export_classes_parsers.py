@@ -121,7 +121,7 @@ g_StructDefs = {
         fields=[
             FieldMetadata(0, "weight", bd.BDType.S32),
             FieldMetadata(4, "group_setup_data", bd.BDType.POINTER),
-            FieldMetadata(4, "stage_data", bd.BDType.POINTER),
+            FieldMetadata(8, "stage_data", bd.BDType.POINTER),
         ]),
     "BattleStageData": StructMetadata(
         "BattleStageData", 0x1b4, array=UNKNOWN_LENGTH,
