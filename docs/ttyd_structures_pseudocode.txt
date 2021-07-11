@@ -109,7 +109,7 @@ enum BattleUnitAttribute_Flags {
     0x1000, 0x2000 = ? (used by "tree", "switch", System actors)
     0x20000 = inactive?
     0x200'0000 = counters (unused?) AttackTargetProperty 0x400'0000?
-    0x4000'0000 = ShowHpGauge
+    0x4000'0000 = disable damage? Set in unit_lecture_christine::_set_lecture_mode
 }
 
 // "Token"; e.g. btlevtcmd_OnToken
@@ -122,9 +122,16 @@ enum BattleUnitToken_Flags {
 
 // "PartsAttribute", e.g. btlevtcmd_CheckPartsAttribute
 enum PartsAttribute_Flags {
+    // These attributes determine which kinds of attacks can target this part.
+    // - Freely-selectable attacks like jump can target anything regardless of
+    //   whether any of 0x1, 0x2, 0x4 are set
+    // - Forced-selection attacks like Shade Fist or Shell Toss will target
+    //   parts w/ 0x1 set if reachable, then 0x2 parts otherwise
+    // - Bomb Squad targets only parts with at least one of 0x1, 0x2, 0x4 set
     0x1 = MostPreferredSelectTarget
     0x2 = PreferredSelectTarget
     0x4 = SelectTarget
+    
     0x8 = ? Unknown
     0x10 = ? causes AttackTargetClass 0x20'0000 to fail
     0x40 = ? acts like always in front, causes miss after most other initial checks?
@@ -140,7 +147,7 @@ enum PartsAttribute_Flags {
     0x10'0000 = JumplikeCannotTarget (seldom used; e.g. Magnus, Cortez phase 2)
     0x20'0000 = HammerlikeCannotTarget
     0x40'0000 = ShellTosslikeCannotTarget
-    0x80'0000 = ? Grodus' wand and tutorial actors have it
+    0x80'0000 = DisableDamage? (set by Grodus' wand and tutorial actors)
     0x2000'0000 = IsImmuneToDamageOrStatus?
     0x4000'0000 = IsImmuneToOHKO?
     0x8000'0000 = IsImmuneToStatus?
