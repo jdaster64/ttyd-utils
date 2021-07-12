@@ -1427,13 +1427,48 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x00424 = int32 unknown_unit_id;  // BattleTransId -6
     // Used as scratch space when determining / selecting valid targets for a move.
     .0x00428 ~ .0x00ef3 = BattleWorkWeaponTargets weapon_targets_work;
-    // 0x2: Set during a First Strike?
-    // 0x80: Disables audience spawning items? (May have other purposes)
+    // 0x1: ? Set in battle_damage::__declare / BattleAttackDeclare,
+              checked in btlevtcmd_WaitGuardMove
+    // 0x2: Set during a First Strike?, checked in btlevtcmd_WaitGuardMove
+    // 0x4: Set during player attacks / attacking audience?
+    // 0x10: ? Ends battle prematurely (with invincibility?);
+               set in btlevtcmd_InterruptStop, param 0 = 0
+    // 0x20: ? Ends battle prematurely (without invincibility?);
+               set in btlevtcmd_InterruptStop, param 0 = 1;
+               set in battle::BattleMain when BtlSeq 0 == 4, goes to end seq?
+    // 0x40: ? set in battle::BattleMain when BtlSeq 0 == 4, goes to end seq?
+    // 0x80: Seems to be set whenever the player is selecting an action;
+             Battle audience events / item throw processing disabled if 0?
+             Checked in BattleAudience_Main, BattleAudienceCtrlProcess...
+    // 0x100: Battle audience gain/loss disabled if 1?
+              Checked in BattleAudienceAddAudienceNum
     // 0x200: Mario is currently acting and has only the basic Jump move
     // 0x400: Mario is currently acting and has only the basic Hammer move
+    // 0x1000: ? Disables stage objects from falling if set?
+    // 0x2000: btlevtcmd_reset_turn; resets to start-of-turn state?
+    // 0x10000: Toggles displaying all battle units' status icons?
+    // 0x20000: Toggles displaying all battle units' held items?
+                Checked before drawing btlUnitItemDisp2
     // 0x40'0000: Show "Merlee curse has run out" sequence?
-    .0x00ef4 = uint32 unknown flags  // "onoff_battleflag"
-    .0x00ef8 = uint32 unknown flags
+    
+    // Tutorial-related flags?
+    // 0x80'0000: Cannot select any menu options or switch characters
+    // 0x100'0000: Only enables jump + partner moves (Auto-completes jump ACs)
+    // 0x200'0000: Only enables hammer + partner moves
+    // 0x400'0000: Only enables Star Powers
+    // 0x800'0000: Only enables attacks + strategies / "quit"
+                   (crashes if strats selected in normal battle)
+    // 0x1000'0000: Only enables attacks
+
+    // 0x2000'0000: ? "battle::battleDisableHResetCheck",
+                      set in ac_repeatedly::_init_param if AC param 0 = 10
+    // 0x4000'0000: Makes all actors float up and down and "unable to move"
+                    (battle_disp::gravityOffsetControl), disables switching chars
+    // 0x8000'0000: Whether battle is in battleSeqEnd
+    .0x00ef4 = uint32 battle_flags;
+    // 0x1: ? set while displaying menu commands?
+    // 0x2: ? used for displaying Star Points earned?
+    .0x00ef8 = uint32 battle_disp_flags?
     .0x00efc = uint32 ?  // used in btlseqFirstAct
     .0x00f00 = int32 stored_exp;
     .0x00f04 = int32 stored_exp_displayed;
@@ -2025,6 +2060,7 @@ struct BattleWorkAudience {
     // 0x1000 = Case_KillEnemy
     // 0x4000 - Required unset for CheckReactionPerPhase event type 9/11/12 to occur
     // 0x8000 - Punis scared? skip event CheckReactionPerPhase state 0xa-b if unset
+    // 0x10000 - audience events disabled? BattleAudience_Main
     // 0x40000 - turn-end phase event trigger chance does not increment;
                  CheckReactionPerPhase jumps to state F and returns 1 in state 0
     .0x00000 = uint32 flags;
