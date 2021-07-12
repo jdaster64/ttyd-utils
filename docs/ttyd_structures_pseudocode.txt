@@ -1583,6 +1583,20 @@ struct BattleWorkUnit {
     .0x010 = BattleUnitKind* unit_kind_params;
     .0x014 = BattleWorkUnitPart* parts;
     .0x018 = void* data_table;
+    // 0x1 = ? checked in BtlUnit_HpGaugeMain, BattleDrawEnemyHP
+    // 0x2 = ? set around movecolorLv stuff in btlDispMain;
+               in process of fading between active/inactive colors?
+    // 0x8 = ? set in BattleChangeParty
+    // 0x10000 = ? set in unit_party_vivian::battle_evt_majo_disp_off
+    // 0x10'0000 = ? checked in battle_disp::floatOffsetControl
+    // 0x20'0000 = ? checked in battle_disp::floatOffsetControl
+    // 0x100'0000 = ? checked in btlUnitPartsDisp
+    // 0x200'0000 = Forces held item to be rendered even when attacking?
+    // 0x400'0000 = Set while acting / making a selection
+    // 0x800'0000 = Suppresses held item from being rendered even when idle?
+    // 0x4000'0000 = Has a stolen item
+    // 0x8000'0000 = ? something to do w/dying units?
+                       (btlevtcmd_KillUnit, BattleCheckUnitBroken)
     .0x01c = uint32 unit_flags? // btlevtcmd_OffUnitFlag, etc.
     .0x020 = int8 move_state?
     .0x021 = int8 max_move_count;
@@ -1656,6 +1670,8 @@ struct BattleWorkUnit {
     .0x134 = int8 fp_regen_strength;
     .0x135 = int8 ohko_strength?
     // 0x1 = CanAct
+    // 0x100'0000 = Has Defend action status
+    // 0x200'0000 = Has moves remaining?  checked in btlseqAct
     // 0x1000'0000 = InDanger
     // 0x2000'0000 = InPeril
     .0x138 = uint32 status_flags;
