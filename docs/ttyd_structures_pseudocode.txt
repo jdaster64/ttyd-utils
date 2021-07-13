@@ -106,16 +106,16 @@ enum AttackTargetWeighting_Flags {
 
 // "Attribute"; e.g. btlevtcmd_OnAttribute
 enum BattleUnitAttribute_Flags {
-    0x1 = ? (used by "tree" and "switch" actors, checked in _btlSamplingEnemy)
+    0x1 = ? acts like actor is 300 units farther back, unless part has attr 0x20000
     0x2 = OutOfReach (generally on ceiling)
     0x4 = Unquakeable (aerial / hovering)
     0x8 = ? checked in btlDispMain and BattlePreCheckDamage, invisible-like status?
     0x10 = Veiled (w/Vivian)
     0x20 = ShellShielded
-    0x40 = ? required for targets to be valid in _btlSamplingEnemy
+    0x40 = ? if set, makes unit untargetable (per _btlSamplingEnemy)
     0x100 = ? used at end of BattleCalculateDamage
-    0x1000 = ? (used by "tree", "switch", System actors, checked in gravityOffsetControl)
-    0x2000 = ? (used by "tree", "switch", System actors, checked in btlseqAct)
+    0x1000 = ? disables zero-gravity floatiness
+    0x2000 = ? disables zero-gravity inability to move
     0x4000 = ? prevents spin hammer knockback?
     0x10000 = ? has to do with dead actors?
                 checked when HP = 0 in BattleCalculateDamage...
@@ -168,7 +168,7 @@ enum PartsAttribute_Flags {
                (perhaps set on "fake" actors?)
     0x8000 = ? checked at btlDispMain after Invisible / Dodgy checks 
     0x10000 = NeverTargetable (i.e., cosmetic only, presumably)
-    0x20000 = ? checked in _btlSamplingEnemy
+    0x20000 = ? if set, ignores the extra offset from unit attr 0x1 being set
     0x40000 = ? causes AttackTargetClass 0x10'0000/20'0000 to fail?
     0x80000 = Untattleable (e.g. Cortez' bone pile, Blooper's arms, tutorial...)
     0x10'0000 = JumplikeCannotTarget (seldom used; e.g. Magnus, Cortez phase 2)
