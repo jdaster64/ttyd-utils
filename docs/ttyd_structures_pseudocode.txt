@@ -1514,14 +1514,18 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     // 0x13e = 0x200
     // 0x13f = 0x1000
     .0x163f4 = uint32 badge_equipped_flags;
-    
+    .0x163f8 = File*  battle_common_tpl_file;
     .0x163fc ~ .0x16f37 = BattleWorkStage stage_work;
     .0x16f38 ~ .0x16f5b = BattleWorkActRecord act_record_work;
     .0x16f5c ~ .0x1715b = BattleWorkAfterReaction[64] after_reaction_queue;
     .0x1715c ~ .0x180db = BattleWorkStageObject[32] stage_object_work;
     .0x180dc ~ .0x182cb = BattleWorkStageHazards stage_hazard_work;
     .0x182cc ~ .0x18c8b = BattleWorkIcon[16] icon_work;
-    
+    // Following four fields used by btlevtcmd_AnnounceMessage.
+    .0x18c8c = int16 announce_msg_x_pos?
+    .0x18c8e = int16 announce_msg_y_pos?
+    .0x18c90 = int32 announce_msg_item_type;
+    .0x18ca0 ~ .0x18d9f = byte[256] announce_msg_buffer;  // 0x100 len typical
     .0x18da0 ~ .0x18ff7 = BattleWorkStatusChangeMsg status_change_msg_work;
     .0x18ff8 = ?
     .0x18ff9 = int8 impending_merlee_spell;
@@ -1536,7 +1540,7 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x19007 = int8 // copied from attack params 0x1b if stylish successful
     .0x19008 = char* weapon_ac_help_msg;  // from attack params 0x70
     .0x1900c = uint32 battle_ac_help_disp_type;
-    
+    .0x19010 ~ .0x1904f  ? // Unused?
     .0x19050 = int32 mario_jump_disabled_turns;
     .0x19054 = int32 mario_hammer_disabled_turns;
     .0x19058 = int32 mario_items_disabled_turns;
@@ -1544,9 +1548,9 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     .0x19060 = int32[4] reserve_items;    // BattleConsumeReserveItem
     .0x19070 = int32 curtain_sfx_entry_idx;  // btlseqFirstAct
     .0x19074 = bool last_ac_successful;  // btlevtcmd_AudienceDeclareACResult
-    // Likely (IMO) the remnant of some battle debugging functionality.
-    // 1 = force trigger object fall
-    // 2 = force trigger object to hit audience
+    // Likely (IMO) the remnant of some battle debug functionality / tutorials?
+    // 0x1 = force trigger object fall
+    // 0x2 = force trigger object to hit audience
     // 0x10 = force trigger A1 bg fall
     // 0x20 = force trigger A2 bg fall
     // 0x40 = force trigger B bg fall
@@ -1558,10 +1562,13 @@ struct BattleWork {  // "Top-Level Battle Info" / "TLBI"
     // 0x40000 = force Luigi to appear at beginning of fight
     // 0x80000 = force trigger bingo card (.0x1908c = card to force)?
     .0x19078 = uint32 debug_event_triggers?
-    
+    .0x1907c ~ .0x19083  ?  // Unused?
     .0x19084 = int32 debug_audience_count;
     .0x19088 = int32 debug_audience_monotype_kind;
     .0x1908c = int32 debug_force_bingo_slot_type;
+    // Used to continue the Frankly SP tutorial after attacking the audience?
+    .0x19090 = uint32_t unk_0x19090_flags;
+    .0x19094 = uint32_t unk_0x19094_window_idx;
 } [size = 0x19098]
 
 struct BattleWorkAlliance {
