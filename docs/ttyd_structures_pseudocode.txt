@@ -2491,6 +2491,9 @@ struct BattleWorkPad {
 } [size = 0x1fc]
 
 struct BattleWorkPartyInfo {
+    // All copied from BattleWorkUnit .0x114 ~ .0x13f (except padding bytes)
+    // Populated / read from in BtlUnit_SetParam(From/To)Pouch; used to
+    // carry partner status when swapped in and out.
 } [size = 0x2c]
 
 struct BattleWorkResultInformation {
