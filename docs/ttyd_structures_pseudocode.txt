@@ -69,7 +69,7 @@ enum AttackTargetClass_Flags {
 
 // All not listed are seemingly never used.
 enum AttackTargetProperty_Flags {
-    0x1 = Tattleable
+    0x1 = Tattle-like
     0x2 = ? Used by "dummy no item" and Fuzzy Horde; similar to 0x8?
     0x4 = CannotTargetCeiling (used by jumps, Koops' attacks, etc.)
     0x8 = CannotTargetFloating (used by Quake Hammer, Magnus' earthquake, etc.)
