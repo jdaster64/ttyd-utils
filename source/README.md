@@ -19,7 +19,7 @@ To make full use of these utilities, you need:
 After acquiring them, you can run the utilities in this directory in the
 following order (making sure to use the same *--out_path* for each invocation):
 
-#### Step 1. Dump the raw data from the sections of the .dol/.rel files.
+### Step 1. Dump the raw data from the sections of the .dol/.rel files.
 
 **dump_sections.py** takes the .dol/.rel files provided, and outputs the following:
 * A .csv file containing information regarding the type, size, and file-/RAM-relative
@@ -55,7 +55,7 @@ dump_sections.py \
 * *NOTE: --rel must be specified as a relative path, and should contain a
    single \* wildcard.*
 
-**Side-note**, if you're most interested in using these scripts as reference to
+**As a side note**, if you're most interested in using these scripts as reference to
 hex-edit the DOL or RELs, the symbol maps generated in Step 3 will tell you the
 section-relative address of each symbol in the game, and you can add those
 addresses to the file-level start addresses for their respective section listed
@@ -68,7 +68,7 @@ file-level address **0x3011e0**. Adding these together gives you the address
 0x3011e0 + 0x6b550 = **0x36c730**, which is the offset in the boot.dol file
 that item drop table can be found at.
 
-#### Step 2. If necessary, convert your externally-sourced .MAP files to a symbol table.
+### Step 2. If necessary, convert your externally-sourced .MAP files to a symbol table.
 
 * **NOTE:** *You can skip this step if using the already-provided **resources/us_symbols.csv** file.*
 
@@ -90,7 +90,7 @@ annotate_map_symbols.py --out_path=YOUR_OUTPUT_PATH
 * *NOTE: --rel_map must be specified as a relative path, and should contain a
    single \* wildcard.*
 
-#### Step 3. Export .MAP files and ttydasm symbol files using the symbol table.
+### Step 3. Export .MAP files and ttydasm symbol files using the symbol table.
 
 The **symbol_to_maps** utility produces .MAP files from your symbol table,
 which can be useful if you don't already have them as a more human-readable
@@ -113,7 +113,7 @@ symbol_to_maps.py \
   --rel_bss_address=0x80a00000
 ```
 
-#### Step 4. Export evt scripts to text files using ttydasm.
+### Step 4. Export evt scripts to text files using ttydasm.
 
 The **export_events** utility takes the ttydasm symbol files and dumped
 sections, and uses PistonMiner's *ttydasm* tool to produce text dumps of
@@ -143,7 +143,7 @@ export_events.py \
   --ttydasm_exe=PATH_TO_TTYDASM.exe
 ```
 
-#### Step 5. Export instances of certain C data types to .csv files.
+### Step 5. Export instances of certain C data types to .csv files.
 
 The **export_classes** utility takes the dumped section info from Step 1,
 and produces .csv dumps containing the field values and bytewise representation
