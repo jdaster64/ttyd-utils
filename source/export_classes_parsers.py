@@ -565,9 +565,9 @@ g_StructDefs = {
     "CookingRecipe": StructMetadata(
         "CookingRecipe", 0xc, array=UNKNOWN_LENGTH,
         fields=[
-            FieldMetadata(0, "result_id", bd.BDType.CSTRING),
-            FieldMetadata(4, "ingredient_1_id", bd.BDType.CSTRING),
-            FieldMetadata(8, "ingredient_2_id", bd.BDType.CSTRING),
+            FieldMetadata(0, "ingredient_1_id", bd.BDType.CSTRING),
+            FieldMetadata(4, "ingredient_2_id", bd.BDType.CSTRING),
+            FieldMetadata(8, "result_id", bd.BDType.CSTRING),
         ]),
     "ItemData": StructMetadata(
         "ItemData", 0x28, array=ZERO_TERMINATED,
