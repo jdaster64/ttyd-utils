@@ -78,7 +78,7 @@ def _CreateMapFiles(out_path, map_lines, area):
     # Create a .MAP file with only symbols from the given area.
     lines = []
     sections = [
-        ".init", ".ctors", ".dtors", ".rodata", ".data", ".bss", 
+        ".init", ".text", ".ctors", ".dtors", ".rodata", ".data", ".bss", 
         ".sdata", ".sbss", ".sdata2", ".sbss2"]
     for section in sections:
         if (area, section) in map_lines:
