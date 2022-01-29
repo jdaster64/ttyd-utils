@@ -1,4 +1,4 @@
-### Jdaster64's PM:TTYD Utils & Docs (latest update: 2021-03-04)
+### Jdaster64's PM:TTYD Utils & Docs (latest update: 2022-01-29)
 
 ### Credits
 * **PistonMiner** for the TTYD scripting disassembly tool, ttydasm. (GitHub repo [here](https://github.com/PistonMiner/ttyd-tools).)
@@ -10,6 +10,7 @@
   * **ttyd_structures_pseudocode** - Notes on various TTYD structure layouts / enums, mostly for battle-related stuff.
 * **resources**:
   * **us_symbols.csv** - A near-complete symbol table for the US retail version of TTYD, including some type information (including marking ~all evts).
+  * **eu_symbols.csv** - A near-complete symbol table for the PAL retail version of TTYD, including some type information (including marking ~all evts).
   * A dump from an old curated table of symbol diffs between the JP demo and US retail versions of TTYD, used to locate individual functions / data / class instances (was used for older Python scripts
   * Text files containing TTYD's battle units' and items' names in ID order, one per line.
 * **source**:
