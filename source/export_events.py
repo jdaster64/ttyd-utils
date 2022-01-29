@@ -103,10 +103,11 @@ def _ExportEvents(out_path, symbols, ttydasm_symbols, section_map):
             out_path / "events" / ("%s.txt" % event_name), "w", encoding="utf-8")
         (ram_filepath, base_address) = section_map[
             "%s-%02d" % (row["area"], row["sec_id"])]
+        ram_addr = base_address + int(row["sec_offset"], 16)
         subprocess.check_call([
             str(Path(ttydasm_exe)),
             "--base-address=0x%08x" % base_address,
-            "--start-address=0x%08x" % int(row["ram_addr"], 16),
+            "--start-address=0x%08x" % ram_addr,
             "--symbol-file=%s" % ttydasm_symbols[row["area"]],
             ram_filepath],
             stdout=outfile)

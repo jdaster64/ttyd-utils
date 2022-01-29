@@ -40,6 +40,26 @@ def _GetOutputPath(path, create_parent=True):
     if create_parent and not os.path.exists(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path))
     return path
+    
+def _LoadSectionRamAddrDict(in_path, section_info):
+    """Constructs a dict of REL/section : ram base address."""
+    if FLAGS.GetFlag("debug_level"):
+        print("Loading section ram addresses...")
+    
+    section_info = section_info.set_index(["area", "id"])
+        
+    section_data = {}
+    for sec_id in range(8, 13):
+        ram_addr = int(section_info.loc[("_main", sec_id)]["ram_start"], 16)
+        section_data["_main-%02d" % sec_id] = ram_addr
+    
+    rels_dir = in_path / "sections/rel_linked"
+    areas = [f.name for f in os.scandir(rels_dir) if f.is_dir()]
+    for area in areas:
+        for sec_id in range(4, 6):
+            ram_addr = int(section_info.loc[(area, sec_id)]["ram_start"], 16)
+            section_data["%s-%02d" % (area, sec_id)] = ram_addr
+    return section_data
         
 def _LoadSectionDataDict(out_path, section_info):
     """Constructs a dict of area name : BDStore of that area's data sections."""
@@ -64,7 +84,7 @@ def _LoadSectionDataDict(out_path, section_info):
             res[area].RegisterFile(path, offset=int(row["ram_start"], 16))
     return res
     
-def _GetSymbolsToDump(symbol_table):
+def _GetSymbolsToDump(symbol_table, section_addrs):
     """Creates a table of symbols to dump w/ export_classes_parsers."""
     if FLAGS.GetFlag("debug_level"):
         print("Finding symbols to dump...")
@@ -90,7 +110,9 @@ def _GetSymbolsToDump(symbol_table):
             arr_count = int(row["size"], 16) // type_def.size
             
         # Add a row to the output dataframe per instance.
-        address = int(row["ram_addr"], 16)
+        ram_addr = section_addrs[
+            "%s-%02d" % (row["area"], row["sec_id"])
+        ] + int(row["sec_offset"], 16)
         for x in range(arr_count):
             name = row["name"]
             # Append the hexadecimal index in the array, if > 1 instance.
@@ -99,17 +121,17 @@ def _GetSymbolsToDump(symbol_table):
             # Add to the output dataframe.
             data.append([
                 row["area"], name, row["namespace"],
-                address + x * type_def.size, row["type"]])
+                ram_addr + x * type_def.size, row["type"]])
             # Add substructures to output dataframe, if necessary.
             # TODO: Implement support for recursive substructures?
             if type_def.substructs is None:
                 continue
             for subtype_def in type_def.substructs:
                 subname = name + "_" + subtype_def.name
-                ram_addr = int(row["ram_addr"], 16) + subtype_def.offset
+                subtype_ram_addr = ram_addr + subtype_def.offset
                 data.append([
                     row["area"], subname, row["namespace"],
-                    ram_addr, subtype_def.datatype])
+                    subtype_ram_addr, subtype_def.datatype])
     
     return pd.DataFrame(data, columns=columns)
     
@@ -171,9 +193,11 @@ def main(argc, argv):
     symbol_table = pd.read_csv(Path(symbols_path))
     
     # Create inputs necessary for dumping symbols.
-    symbols_to_dump = _GetSymbolsToDump(symbol_table)
-    lookup_table = _CreateSymbolLookupTable(symbol_table, symbols_to_dump)
-    stores = _LoadSectionDataDict(out_path, section_info)
+    
+    section_addrs   = _LoadSectionRamAddrDict(out_path, section_info)
+    symbols_to_dump = _GetSymbolsToDump(symbol_table, section_addrs)
+    lookup_table    = _CreateSymbolLookupTable(symbol_table, symbols_to_dump)
+    stores          = _LoadSectionDataDict(out_path, section_info)
     
     _DumpSymbols(out_path, symbols_to_dump, lookup_table, stores)
     

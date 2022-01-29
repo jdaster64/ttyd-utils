@@ -687,8 +687,14 @@ def ParseClass(view, symbol, symbol_table=None):
             if view.rptr(field.offset) == 0:
                 value = "<NULL>"
             else:
-                str_view = view.indirect(field.offset)
-                value = codecs.decode(str_view.rcstring(), "shift-jis")
+                try:
+                    str_view = view.indirect(field.offset)
+                    value = codecs.decode(str_view.rcstring(), "shift-jis")
+                except:
+                    raise ExportClassesParserError(
+                        'Error parsing field "%s" in %s %s %s.' %
+                        (field.name, symbol["area"], symbol["name"],
+                         symbol["namespace"]))
         else:
             # Otherwise, read the value per the specified field type.
             value = view.read(field.datatype, field.offset)

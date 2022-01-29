@@ -41,7 +41,25 @@ def _GetOutputPath(path, create_parent=True):
         os.makedirs(os.path.dirname(path))
     return path
     
-def _GetMapLines(symbols):
+def _LoadSectionRamAddrDict(in_path, section_info):
+    """Constructs a dict of REL/section : ram base address."""
+    if FLAGS.GetFlag("debug_level"):
+        print("Loading section ram addresses...")
+        
+    section_data = {}
+    for sec_id in (0, 1, 7, 8, 9, 10, 11, 12, 100, 101, 102):
+        ram_addr = int(section_info.loc[("_main", sec_id)]["ram_start"], 16)
+        section_data["_main-%02d" % sec_id] = ram_addr
+    
+    rels_dir = in_path / "sections/rel_linked"
+    areas = [f.name for f in os.scandir(rels_dir) if f.is_dir()]
+    for area in areas:
+        for sec_id in range(1, 6):
+            ram_addr = int(section_info.loc[(area, sec_id)]["ram_start"], 16)
+            section_data["%s-%02d" % (area, sec_id)] = ram_addr
+    return section_data
+    
+def _GetMapLines(symbols, section_addrs):
     """Returns a dict of area/sec name : list of lines for the map file."""
     res = defaultdict(list)
     rel_bss_addr = FLAGS.GetFlag("rel_bss_address")
@@ -61,7 +79,9 @@ def _GetMapLines(symbols):
                     continue
                 ram_addr = rel_bss_addr + int(row["sec_offset"], 16)
             else:
-                ram_addr = int(row["ram_addr"], 16)
+                ram_addr = section_addrs[
+                    "%s-%02d" % (row["area"], row["sec_id"])
+                ] + int(row["sec_offset"], 16)
             text = "  %08x %08x %08x %2d %s\t%s\n" % (
                 int(row["sec_offset"], 16), int(row["size"], 16), 
                 int(row["sec_offset"], 16), int(row["align"]),
@@ -113,7 +133,7 @@ def _CreateMapFiles(out_path, map_lines, area):
     for line in lines:
         f.write(line)
 
-def _GetTtydasmLines(symbols):
+def _GetTtydasmLines(symbols, section_addrs):
     """Returns a dict of area : list of lines for the ttydasm symbols file."""
     res = defaultdict(list)
     if FLAGS.GetFlag("debug_level"):
@@ -128,7 +148,10 @@ def _GetTtydasmLines(symbols):
                 name = '"%s"' % row["value"]
             else:
                 name = "%s %s" % (row["name"], row["namespace"])
-            text = "%08X:%s\n" % (int(row["ram_addr"], 16), name)
+            ram_addr = section_addrs[
+                "%s-%02d" % (row["area"], row["sec_id"])
+            ] + int(row["sec_offset"], 16)
+            text = "%08X:%s\n" % (ram_addr, name)
             res[(row["area"], row["sec_name"])].append(text)
     return res
 
@@ -154,9 +177,16 @@ def main(argc, argv):
         raise SymbolToMapError("Must set an --out_path.")
     out_path = Path(out_path)
     
-    symbols = pd.read_csv(in_path)
-    map_lines = _GetMapLines(symbols)
-    ttydasm_lines = _GetTtydasmLines(symbols)
+    if not os.path.exists(out_path / "section_info.csv"):
+        raise ExportEventsError(
+            "You must first run dump_sections.py using the same --out_path.")
+    section_info = pd.read_csv(out_path / "section_info.csv")
+    section_info = section_info.set_index(["area", "id"])
+    
+    symbols         = pd.read_csv(in_path)
+    section_addrs   = _LoadSectionRamAddrDict(out_path, section_info)
+    map_lines       = _GetMapLines(symbols, section_addrs)
+    ttydasm_lines   = _GetTtydasmLines(symbols, section_addrs)
     
     for area in symbols.area.unique():
         _CreateMapFiles(out_path, map_lines, area)
