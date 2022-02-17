@@ -71,7 +71,7 @@ that item drop table can be found at.
 
 ### Step 2. If necessary, convert your externally-sourced .MAP files to a symbol table.
 
-* **NOTE:** *You can skip this step if using the already-provided **resources/us_symbols.csv** file.*
+* **NOTE:** *You can skip this step if using one of the already-provided **resources/\*_symbols.csv** files.*
 
 Running the **map_to_symbols** and **annotate_map_symbols** utilities in sequence
 will produce a .csv of symbols with the same columns as **resources/us_symbols.csv**,

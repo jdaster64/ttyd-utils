@@ -32,11 +32,11 @@ class MapToSymbolError(Exception):
     def __init__(self, message=""):
         self.message = message
     
-def _ProcessMap(filepath, area):
+def _ProcessMap(section_info, filepath, area):
     def _CreateSymbolDf(area, sec_id, sec_name, sec_type, line):
         # TODO: Add local / global information? Needs to be parsed from header.
         columns = [
-            "area", "sec_id", "sec_name", "sec_type",
+            "area", "sec_id", "sec_name", "sec_type", "ram_addr", "file_addr",
             "name", "namespace", "sec_offset", "size", "align"
         ]
         
@@ -52,8 +52,21 @@ def _ProcessMap(filepath, area):
         size = "%08x" % (int(tokens[1], 16))
         alignment = int(tokens[3], 10)
         
+        # Calculate RAM and file-level addresses based on section_info table.
+        section = section_info.loc[(area, sec_id)]
+        ram_addr = section["ram_start"]
+        ram_addr = (
+            "%08x" % (int(ram_addr, 16) + int(sec_offset, 16))
+            if isinstance(ram_addr, str) and ram_addr else np.nan
+        )
+        file_addr = section["file_start"]
+        file_addr = (
+            "%08x" % (int(file_addr, 16) + int(sec_offset, 16))
+            if isinstance(file_addr, str) and file_addr else np.nan
+        )
+        
         return pd.DataFrame([[
-            area, sec_id, sec_name, sec_type,
+            area, sec_id, sec_name, sec_type, ram_addr, file_addr,
             name, namespace, sec_offset, size, alignment
         ]], columns=columns)
             
@@ -115,6 +128,13 @@ def main(argc, argv):
         raise MapToSymbolError("Must provide a directory for --out_path.")
     elif not os.path.exists(out_path):
         os.makedirs(out_path)
+        
+    # Load section info table for file/RAM-relative addresses.
+    if not os.path.exists(out_path / "section_info.csv"):
+        raise MapToSymbolError(
+            "--out_path must contain results of dump_sections.py.")
+    section_info = pd.read_csv(out_path / "section_info.csv")
+    section_info = section_info.set_index(["area", "id"])
     
     # Create list of symbol_info dataframes to be later merged.
     symbol_info = []
@@ -123,7 +143,7 @@ def main(argc, argv):
     dol_path = Path(FLAGS.GetFlag("dol_map"))
     if not dol_path.exists():
         raise MapToSymbolError("--dol_map file does not exist." % version)
-    symbol_info.append(_ProcessMap(dol_path, "_main"))
+    symbol_info.append(_ProcessMap(section_info, dol_path, "_main"))
     
     # Parse symbols from .REL maps.
     rel_pattern = FLAGS.GetFlag("rel_map")
@@ -145,7 +165,7 @@ def main(argc, argv):
             continue
         filepath = str(fn)
         area = filepath[lpos:rpos+1-len(normalized_pattern)]
-        symbol_info.append(_ProcessMap(filepath, area))
+        symbol_info.append(_ProcessMap(section_info, filepath, area))
         
     if not len(symbol_info):
         raise MapToSymbolError("No DOLs or RELs were processed.")
