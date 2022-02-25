@@ -12,8 +12,7 @@ To make full use of these utilities, you need:
 * The extracted boot.dol and \*.rel files from any version of TTYD.
 * Either:
   * A .csv containing symbol data for the same version
-    (**resources/us_symbols.csv** or **resources/eu_symbols.csv** will suffice
-    for the retail US or PAL versions), or
+    (**resources/us_symbols.csv**, or its PAL/JP equivalents can be used), or
   * .MAP files containing symbol information for the .dol and .rel files for
     the same version, which can be used to produce a symbol csv.
   
