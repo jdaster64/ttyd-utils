@@ -178,7 +178,7 @@ def main(argc, argv):
     out_path = Path(out_path)
     
     if not os.path.exists(out_path / "section_info.csv"):
-        raise ExportEventsError(
+        raise SymbolToMapError(
             "You must first run dump_sections.py using the same --out_path.")
     section_info = pd.read_csv(out_path / "section_info.csv")
     section_info = section_info.set_index(["area", "id"])
