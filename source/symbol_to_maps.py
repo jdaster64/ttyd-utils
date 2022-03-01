@@ -94,7 +94,7 @@ def _GetMapLines(symbols, section_addrs):
         res[(row["area"], row["sec_name"])].append(text)
     return res
     
-def _CreateMapFiles(out_path, map_lines, area):
+def _CreateMapFiles(out_path, map_lines, area, section_info):
     # Create a .MAP file with only symbols from the given area.
     lines = []
     sections = [
@@ -113,6 +113,33 @@ def _CreateMapFiles(out_path, map_lines, area):
         _GetOutputPath(out_path / "maps" / (area + ".map")), "w", "utf-8")
     for line in lines:
         f.write(line)
+        
+    # Add memory map section to bottom of file.
+    f.write("\nMemory map:\n");
+    f.write("                   Starting Size     File\n");
+    f.write("                   address           Offset\n");
+    ram_addr = 0
+    file_addr = 0
+    size = 0
+    for section in sections:
+        if (area, section) in section_info.index:
+            info = section_info.loc[(area, section)]
+            if area == "_main":
+                # If not main DOL, RAM addresses should stay at 0.
+                ram_addr = int(info["ram_start"], 16)
+            if info["type"] == "bss":
+                # Compute .bss 'file offset' based on last section's endpoint,
+                # as .bss sections are by definition not stored in the file.
+                align = 32 if area == "_main" else 8
+                file_addr += size + align - 1
+                file_addr -= (file_addr % align)
+            else:
+                file_addr = int(info["file_start"], 16)
+            size = int(info["size"],16)
+            f.write(
+                "%17s  %08x %08x %08x\n" % (section, ram_addr, size, file_addr))
+    f.write("\n")
+        
     # For RELs, also export .MAP files with .dol and .rel symbols included.
     if area == "_main":
         return
@@ -188,8 +215,11 @@ def main(argc, argv):
     map_lines       = _GetMapLines(symbols, section_addrs)
     ttydasm_lines   = _GetTtydasmLines(symbols, section_addrs)
     
+    section_info = section_info.reset_index()
+    section_info = section_info.set_index(["area", "name"])
+    
     for area in symbols.area.unique():
-        _CreateMapFiles(out_path, map_lines, area)
+        _CreateMapFiles(out_path, map_lines, area, section_info)
         _CreateTtydasmFile(out_path, ttydasm_lines, area)
 
 if __name__ == "__main__":
