@@ -233,7 +233,7 @@ Symbols of alignment greater than 4 for the .text section or 8 for the .rodata,
 and .data, .bss sections are not supported, nor are sections other than
 .text, .rodata, .data, and .bss with indices 1, 4, 5 and 6.
 
-Example invocation for symbol names:
+**Sample invocation for symbol names:**
 
 ```
 combine_rels.py \
@@ -253,7 +253,7 @@ muj:battle_database_muj.o:btlparty_muj_muj_05_01
 
 ```
 
-Example invocation for symbol ranges:
+**Sample invocation for symbol ranges:**
 
 ```
 combine_rels.py \
