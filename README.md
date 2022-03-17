@@ -26,5 +26,8 @@
     * **extract_events** - Exports all labeled evts in a symbol table to text files using *ttydasm*.
     * **extract_classes** - Exports all labeled instances of various structures to .csv files, one for their fields and one for byte representations.
     * **map_to_symbols**, **annotate_map_symbols** - For converting existing .MAP files for other versions of TTYD (e.g. the JP demo) to symbol tables, for use with the other scripts.
+    * Optional utilities:
+      * **combine_event_dumps** - Combines all unique event dumps from extract_events into a single text file.
+      * **combine_rels** - Builds custom REL files composed of symbols from one or more existing RELs.
   * **old_utils**:
     * Were used for some of the same purposes as the newer utilities, but much messier and generally less fully-featured.

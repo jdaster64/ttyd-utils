@@ -198,6 +198,16 @@ export_classes.py \
 
 ### Additional Tools
 
+#### combine_event_dumps
+
+The **combine_event_dumps** utility simply outputs all the event dumps from
+**export_events** in a single text file, assuming it has already been run.
+
+**Sample invocation:**
+```
+combine_event_dumps.py --out_path=YOUR_OUTPUT_PATH
+```
+
 #### combine_rels
 
 The **combine_rels** utility can be used to construct a new relocatable file
