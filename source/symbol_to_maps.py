@@ -69,7 +69,7 @@ def _GetMapLines(symbols, section_addrs):
         if FLAGS.GetFlag("debug_level") and not index % 1000:
             print("Processing line %d..." % index)
         if row["area"] == "_main":
-            text = "  %08x %08x %08x %2d %s\t%s\n" % (
+            text = "  %08x %08x %08x %2d %s %s\n" % (
                 int(row["sec_offset"], 16), int(row["size"], 16), 
                 int(row["ram_addr"], 16), int(row["align"]),
                 row["name"], row["namespace"])
@@ -82,11 +82,11 @@ def _GetMapLines(symbols, section_addrs):
                 ram_addr = section_addrs[
                     "%s-%02d" % (row["area"], row["sec_id"])
                 ] + int(row["sec_offset"], 16)
-            text = "  %08x %08x %08x %2d %s\t%s\n" % (
+            text = "  %08x %08x %08x %2d %s %s\n" % (
                 int(row["sec_offset"], 16), int(row["size"], 16), 
                 int(row["sec_offset"], 16), int(row["align"]),
                 row["name"], row["namespace"])
-            combined_text = "  %08x %08x %08x %2d %s\t%s\n" % (
+            combined_text = "  %08x %08x %08x %2d %s %s\n" % (
                 int(row["sec_offset"], 16), int(row["size"], 16), 
                 ram_addr, int(row["align"]),
                 row["name"], row["namespace"])
