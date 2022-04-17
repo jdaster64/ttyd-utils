@@ -7,6 +7,7 @@ TTYD, and produces a single .csv containing the areas, names/namespaces,
 section offsets and sizes of all contained symbols."""
 # Jonathan Aldrich 2021-01-22 ~ 2021-03-04
 
+import codecs
 import os
 import sys
 import numpy as np
@@ -21,6 +22,7 @@ FLAGS = flags.Flags()
 # REL pattern must contain a single asterisk that matches the REL name.
 FLAGS.DefineString("dol_map", "")
 FLAGS.DefineString("rel_map", "")
+FLAGS.DefineString("encoding", "utf-8")  # Change if MAPs in different encoding.
 
 # Output directory.
 FLAGS.DefineString("out_path", "")
@@ -83,7 +85,7 @@ def _ProcessMap(section_info, filepath, area):
     # Loop over file's lines, adding symbol information.
     dfs = []
     sec_id = -1
-    for line in open(filepath).readlines():
+    for line in codecs.open(filepath, "r", FLAGS.GetFlag("encoding")).readlines():
         if "Memory map" in line:
             break
         elif "section layout" in line:
@@ -129,6 +131,9 @@ def main(argc, argv):
     elif not os.path.exists(out_path):
         os.makedirs(out_path)
         
+    if not FLAGS.GetFlag("encoding"):
+        raise MapToSymbolError("--encoding must be set (defaults to utf-8).")
+        
     # Load section info table for file/RAM-relative addresses.
     if not os.path.exists(out_path / "section_info.csv"):
         raise MapToSymbolError(
@@ -162,6 +167,9 @@ def main(argc, argv):
     for fn in sorted(Path(".").glob(rel_pattern)):
         # Skip the DOL's map if it matches the REL pattern.
         if fn == dol_path:
+            continue
+        # Skip if the filepath contains "_all".
+        if "_all" in str(fn):
             continue
         filepath = str(fn)
         area = filepath[lpos:rpos+1-len(normalized_pattern)]

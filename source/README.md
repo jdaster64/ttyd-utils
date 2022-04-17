@@ -89,6 +89,9 @@ annotate_map_symbols.py --out_path=YOUR_OUTPUT_PATH
 
 * *NOTE: --rel_map must be specified as a relative path, and should contain a
    single \* wildcard.*
+* You can also specify --encoding=YOUR_ALTERNATE_ENCODING if the .MAP files are
+  in a *codecs*-supported encoding other than the default exported by
+  **symbol_to_maps** (UTF-8).
 
 ### Step 3. Export .MAP files and ttydasm symbol files using the symbol table.
 
