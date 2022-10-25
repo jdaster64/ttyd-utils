@@ -1194,7 +1194,7 @@ struct BattleWeapon {
     .0x10 = int8 base_accuracy;
     .0x11 = int8 base_fp_cost;
     .0x12 = int8 base_sp_cost;
-    .0x13 = int8 ? (generally 0, 1, or 2)  // if 0, cannot superguard
+    .0x13 = int8 superguardable;  // 0 = cannot, 1 = recoil, 2 = no recoil
     .0x14 = float ? (generally 1.0 or 0.0)
     
     // These have to do with rewards on hit; .0x18 in particular is Stylish-related
