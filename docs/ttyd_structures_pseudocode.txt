@@ -41,8 +41,8 @@ enum AttackSpecialProperty_Flags {
     0x2000 = FlipsBombFlippableEnemies
     0x4000 = GroundsWingedEnemies
     0x8000 = ? used at end of BattleCalculateDamage
-    0x10000 = CanUseItemIfConfused? (if unset on item, enemies can't use it if their token 0x10 is set)
-    0x20000 = Unguardable?
+    0x10000 = CanBeUsedAsConfusedAction
+    0x20000 = Unguardable
     0x40000 = ? if set and attacking enemy part w/attr 0x4000, won't stop attack
 }
 
