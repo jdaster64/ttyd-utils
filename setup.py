@@ -96,7 +96,6 @@ dol_md5 = '9800df7555210cb392e0cbc9f88488c5'
 
 failed_file_count = 0
 
-print(f"test: {ttyd_tools_directory}")
 if not os.path.isdir(ttyd_tools_directory):
     print("ttyd-tools not found.")
     print("Get ttyd-tools from https://github.com/PistonMiner/ttyd-tools")
