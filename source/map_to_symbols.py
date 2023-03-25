@@ -8,6 +8,7 @@ section offsets and sizes of all contained symbols."""
 # Jonathan Aldrich 2021-01-22 ~ 2021-03-04
 
 import codecs
+import glob
 import os
 import sys
 import numpy as np
@@ -160,11 +161,11 @@ def main(argc, argv):
         raise MapToSymbolError(
             "--rel_map pattern must contain exactly one wildcard asterisk.")
     # Verify any files are matched.
-    if not Path(".").glob(rel_pattern):
+    if not glob.glob(rel_pattern):
         raise MapToSymbolError("--rel_map pattern matched no files.")
     # For each file, get the full path and the part of the string
     # that replaced the asterisk (which should be the area's name).
-    for fn in sorted(Path(".").glob(rel_pattern)):
+    for fn in sorted(glob.glob(rel_pattern)):
         # Skip the DOL's map if it matches the REL pattern.
         if fn == dol_path:
             continue

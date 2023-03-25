@@ -52,9 +52,6 @@ dump_sections.py \
   --rel_bss_address=0x80a00000
 ```
 
-* *NOTE: --rel must be specified as a relative path, and should contain a
-   single \* wildcard.*
-
 **As a side note**, if you're most interested in using these scripts as reference to
 hex-edit the DOL or RELs, the symbol maps generated in Step 3 will tell you the
 section-relative address of each symbol in the game, and you can add those
@@ -87,8 +84,6 @@ map_to_symbols.py \
 annotate_map_symbols.py --out_path=YOUR_OUTPUT_PATH
 ```
 
-* *NOTE: --rel_map must be specified as a relative path, and should contain a
-   single \* wildcard.*
 * You can also specify --encoding=YOUR_ALTERNATE_ENCODING if the .MAP files are
   in a *codecs*-supported encoding other than the default exported by
   **symbol_to_maps** (UTF-8).
