@@ -8,6 +8,7 @@ Takes input DOL and REL files, and dumps the following information:
 - A .csv containing information on section ids, types, addresses and lengths."""
 # Jonathan Aldrich 2021-01-18 ~ 2021-03-02
 
+import glob
 import math
 import os
 import sys
@@ -305,11 +306,11 @@ def main(argc, argv):
         raise DumpSectionsError(
             "--rel pattern must contain exactly one wildcard asterisk.")
     # Verify any files are matched.
-    if not Path(".").glob(rel_pattern):
+    if not glob.glob(rel_pattern):
         raise DumpSectionsError("--rel pattern matched no files.")
     # For each file, get the full path and the part of the string
     # that replaced the asterisk (which should be the area's name).
-    for fn in sorted(Path(".").glob(rel_pattern)):
+    for fn in sorted(glob.glob(rel_pattern)):
         filepath = str(fn)
         area = filepath[lpos:rpos+1-len(normalized_pattern)]
         

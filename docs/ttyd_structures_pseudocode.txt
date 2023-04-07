@@ -1590,7 +1590,7 @@ struct BattleWorkUnit {
     .0x010 = BattleUnitKind* unit_kind_params;
     .0x014 = BattleWorkUnitPart* parts;
     .0x018 = void* data_table;
-    // 0x1 = ? checked in BtlUnit_HpGaugeMain, BattleDrawEnemyHP
+    // 0x1 = ? Force showing the HP gauge?
     // 0x2 = ? set around movecolorLv stuff in btlDispMain;
                in process of fading between active/inactive colors?
     // 0x8 = ? set in BattleChangeParty
@@ -1713,7 +1713,17 @@ struct BattleWorkUnit {
     .0x1bc = float jump_current_pos_y?
     .0x1c0 = ?
     .0x1c4 ~ .0x1f9 = BattleWorkMoveSoundData move_sound_data_table;
-    .0x1fc ~ .0x217 = ? "HpGauge"-related
+    // paramters related to the Tattle HP bar below enemies / Shell Shield
+    .0x1fc = int16 hp_gauge_type?       // 1 = longer deplete animation, unused?
+    .0x1fe = int16 hp_gauge_state?      // 1 = currently animating
+    .0x200 = int16 hp_gauge_deplete_timer;
+    .0x202 = int16 hp_gauge_deplete_timer_max;  // 20f max, or 40f if type = 1
+    .0x204 = int16 hp_gauge_linger_timer;
+    .0x206 = int16 hp_gauge_linger_timer_max;   // 30f more than deplete_timer
+    .0x208 = int32 hp_gauge_previous_hp;
+    .0x20c = int32 hp_gauge_target_hp;
+    .0x210 = float hp_gauge_fullness;
+    .0x214 = float hp_gauge_fullness_target?  // Only set if not animating?
     // various parameters referenced as "UnitWork" in scripts;
     // first four initialized from BattleUnitSetup.0x1c ~ 0x2b
     .0x218 ~ .0x257 = uint32 battle_unit_work[16];
