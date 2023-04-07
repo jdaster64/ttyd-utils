@@ -16,6 +16,8 @@ To make full use of these utilities, you need:
   * .MAP files containing symbol information for the .dol and .rel files for
     the same version, which can be used to produce a symbol csv.
     
+### Quick Setup
+    
 For the quickest setup, you can run the script **setup.py** on the
 command-line. This will check that your DOL and REL dumps are valid,
 will attempt to install any needed Python dependencies, and will run all of
