@@ -1,9 +1,10 @@
-### Jdaster64's PM:TTYD Utils & Docs (latest update: 2022-02-25)
+### Jdaster64's PM:TTYD Utils & Docs (latest update: 2023-04-07)
 
 ### Credits
 * **PistonMiner** for the TTYD scripting disassembly tool, ttydasm. (GitHub repo [here](https://github.com/PistonMiner/ttyd-tools).)
 * PistonMiner and **Zephiles** for their contributions to the symbol maps, including nearly all of the main binary's .text symbols.
 * Both of the above, **Jasper**, **SolidifiedGaming**, and others who've helped with TTYD documentation elsewhere.
+* **Rain** for writing the setup.py script to make setting up the TTYD utilities easier, as well as sort_events_by_prefix.
 
 ### Contents
 * **docs**:
@@ -21,6 +22,7 @@
       * **conv** - Converts between various numeric and datetime formats.
       * **rngutil** - Simulates TTYD's (and a few other games') random number generators.
   * **TTYD utility scripts**: (explained more fully in source/README.md)
+    * **setup** - Runs all the important scripts end-to-end.
     * **dump_sections** - Provided .dol/.rel files from TTYD, dumps their individual sections.
     * **symbol_to_maps** - Converts a symbol table to .MAP files and symbol files for PistonMiner's *ttydasm* tool.
     * **extract_events** - Exports all labeled evts in a symbol table to text files using *ttydasm*.
@@ -29,5 +31,6 @@
     * Optional utilities:
       * **combine_event_dumps** - Combines all unique event dumps from extract_events into a single text file.
       * **combine_rels** - Builds custom REL files composed of symbols from one or more existing RELs.
+      * **sort_events_by_prefix** - Separates event dumps into subfolders based on their prefix.
   * **old_utils**:
     * Were used for some of the same purposes as the newer utilities, but much messier and generally less fully-featured.

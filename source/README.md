@@ -15,8 +15,23 @@ To make full use of these utilities, you need:
     (**resources/us_symbols.csv**, or its PAL/JP equivalents can be used), or
   * .MAP files containing symbol information for the .dol and .rel files for
     the same version, which can be used to produce a symbol csv.
+    
+For the quickest setup, you can run the script **setup.py** on the
+command-line. This will check that your DOL and REL dumps are valid,
+will attempt to install any needed Python dependencies, and will run all of
+the downstream binaries with the correct parameters automatically.
+
+**Sample invocation** (from within the ttyd_utils/source directory):
+```
+setup.py \
+  --ver=VERSION (one of us, jp, or pal)
+  --out=YOUR_OUTPUT_PATH \
+  --dol_filepath=PATH_TO_YOUR_DOL.dol \
+  --rels_directory=PATH_TO_DIRECTORY_CONTAINING_RELS
+  --ttydasm=PATH_TO_TTYDASM_EXE
+```
   
-After acquiring them, you can run the utilities in this directory in the
+Alternatively, you can run the utilities in this directory individually in the
 following order (making sure to use the same *--out_path* for each invocation):
 
 ### Step 1. Dump the raw data from the sections of the .dol/.rel files.
@@ -204,6 +219,17 @@ The **combine_event_dumps** utility simply outputs all the event dumps from
 **Sample invocation:**
 ```
 combine_event_dumps.py --out_path=YOUR_OUTPUT_PATH
+```
+
+#### sort_events_by_prefix
+
+The **sort_events_by_prefix** utility moves all the event dumps from 
+**export_events** into subfolders based on their prefixes
+(scripts for battle units, specific rels, etc.)
+
+**Sample invocation:**
+```
+sort_events_by_prefix.py YOUR_OUTPUT_PATH/events
 ```
 
 #### combine_rels
