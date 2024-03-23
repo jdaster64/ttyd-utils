@@ -374,12 +374,6 @@ g_StructDefs = {
             FieldMetadata(0x44, "PCA_VolatileExplosive", bd.BDType.U32, 13),
             FieldMetadata(0x48, "pose_table", bd.BDType.POINTER),
         ]),
-    "BattleUnitPoseTable": StructMetadata(
-        "BattleUnitPoseTable", 0x8, array=ZERO_TERMINATED,
-        fields=[
-            FieldMetadata(0, "pose_id", bd.BDType.S32),
-            FieldMetadata(4, "pose_name", bd.BDType.CSTRING),
-        ]),
     "BattleUnitSetup": StructMetadata(
         "BattleUnitSetup", 0x30, array=UNKNOWN_LENGTH,
         fields=[
@@ -610,6 +604,31 @@ g_StructDefs = {
             FieldMetadata(0x18, "lost_event", bd.BDType.POINTER),
             FieldMetadata(0x1c, "return_event", bd.BDType.POINTER),
             FieldMetadata(0x20, "blow_event", bd.BDType.POINTER),
+        ]),
+    "NpcTribeDescription": StructMetadata(
+        "NpcTribeDescription", 0x54, array=ZERO_TERMINATED,
+        fields=[
+            FieldMetadata(0x00, "name_jp", bd.BDType.CSTRING),
+            FieldMetadata(0x04, "model_name", bd.BDType.CSTRING),
+            FieldMetadata(0x08, "initial_animation", bd.BDType.CSTRING),
+            FieldMetadata(0x0c, "stop_animation", bd.BDType.CSTRING),
+            FieldMetadata(0x10, "stay_animation", bd.BDType.CSTRING),
+            FieldMetadata(0x14, "talk_animation", bd.BDType.CSTRING),
+            FieldMetadata(0x18, "walk_animation", bd.BDType.CSTRING),
+            FieldMetadata(0x1c, "run_animation", bd.BDType.CSTRING),
+            FieldMetadata(0x20, "damage_animation", bd.BDType.CSTRING),
+            FieldMetadata(0x24, "confuse_animation", bd.BDType.CSTRING),
+            FieldMetadata(0x28, "width", bd.BDType.FLOAT),
+            FieldMetadata(0x2c, "height", bd.BDType.FLOAT),
+            FieldMetadata(0x30, "shadow_offset_x", bd.BDType.FLOAT),
+            FieldMetadata(0x34, "shadow_offset_y", bd.BDType.FLOAT),
+            FieldMetadata(0x38, "shadow_offset_z", bd.BDType.FLOAT),
+            FieldMetadata(0x3c, "run_speed", bd.BDType.FLOAT),
+            FieldMetadata(0x40, "move_left_sfx", bd.BDType.CSTRING),
+            FieldMetadata(0x44, "move_right_sfx", bd.BDType.CSTRING),
+            FieldMetadata(0x48, "unk_sfx_id", bd.BDType.U16),
+            FieldMetadata(0x4c, "jump_sfx", bd.BDType.CSTRING),
+            FieldMetadata(0x50, "land_sfx", bd.BDType.CSTRING),
         ]),
     "PointDropData": StructMetadata(
         "PointDropData", 0x10, array=5,
