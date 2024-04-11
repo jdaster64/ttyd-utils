@@ -194,10 +194,13 @@ BattleUnitKindPart
 BattleUnitPoseTable
 BattleUnitSetup
 BattleWeapon
+BeroInfo
 CookingRecipe
 ItemData
 ItemDropData
 NpcAiTypeTable
+NpcSetupInfo
+NpcTribeDescription
 PointDropData
 ShopItemTable
 ShopSellPriceList

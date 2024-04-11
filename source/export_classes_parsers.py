@@ -556,6 +556,27 @@ g_StructDefs = {
             FieldMetadata(0xbc, "object_fall_chance", bd.BDType.S8),
             FieldMetadata(0xbd, "unk_stage_hazard_chance", bd.BDType.S8),
         ]),
+    "BeroInfo": StructMetadata(
+        "BeroInfo", 0x3c, array=ZERO_TERMINATED,
+        fields=[
+            FieldMetadata(0x00, "hitobj_name", bd.BDType.CSTRING),
+            FieldMetadata(0x04, "type", bd.BDType.S16),
+            FieldMetadata(0x06, "sfx_id", bd.BDType.S16),
+            FieldMetadata(0x08, "direction", bd.BDType.S32),
+            FieldMetadata(0x0c, "center_pos_x", bd.BDType.S32),
+            FieldMetadata(0x10, "center_pos_y", bd.BDType.S32),
+            FieldMetadata(0x14, "center_pos_z", bd.BDType.S32),
+            FieldMetadata(0x18, "length", bd.BDType.S32),
+            FieldMetadata(0x1c, "enter_event", bd.BDType.POINTER),
+            FieldMetadata(0x20, "case_type", bd.BDType.S32),
+            FieldMetadata(0x24, "exit_event", bd.BDType.POINTER),
+            FieldMetadata(0x28, "target_map", bd.BDType.CSTRING),
+            FieldMetadata(0x2c, "target_bero", bd.BDType.CSTRING),
+            FieldMetadata(0x30, "enter_anim_type", bd.BDType.S16),
+            FieldMetadata(0x32, "exit_anim_type", bd.BDType.S16),
+            FieldMetadata(0x34, "enter_anim_args", bd.BDType.POINTER),
+            FieldMetadata(0x38, "exit_anim_args", bd.BDType.POINTER),
+        ]),
     "CookingRecipe": StructMetadata(
         "CookingRecipe", 0xc, array=UNKNOWN_LENGTH,
         fields=[
