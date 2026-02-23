@@ -32,18 +32,25 @@ enum AttackSpecialProperty_Flags {
     0x10 = DiminishingReturnsByHit (e.g. Power Bounce, Atomic Boo wind)
     0x20 = DiminishingReturnsByTarget (e.g. Fire Drive)
     0x40 = PiercesDefense
-    0x80 = CanBreakIce? (does nothing, since it's also required that rand(100) < 0)
+    // Would have a random chance to instantly KO frozen targets,
+    // but the rand(100) call in the code checks for < 0, making it useless.
+    0x80 = FreezeCrush
     0x100 = IgnoreTargetStatusVulnerability (unless it is 0)
-    0x200 = ? (only used by Gale Force)
-    0x400 = IgnitesIfBurned (turns attacks fire-elemental if attacker is burned)
-    0x800 = ? makes Attack FX sounds?
+    // Used only by Gale Force.
+    0x200 = ?
+    // Turns attacks fire-elemental if the attacker is burned.
+    0x400 = Ignitable
+    0x800 = PlaysAttackFxSounds
     0x1000 = FlipsShellEnemies
     0x2000 = FlipsBombFlippableEnemies
     0x4000 = GroundsWingedEnemies
-    0x8000 = ? used at end of BattleCalculateDamage
+    // Used at the end of BattleCalculateDamage; purpose unknown.
+    0x8000 = ?
     0x10000 = CanBeUsedAsConfusedAction
     0x20000 = Unguardable
-    0x40000 = ? if set and attacking enemy part w/attr 0x4000, won't stop attack
+    // Allows attacks aimed at Wizzerd/Magikoopa clones to not phase through them
+    // (the clone will still disappear after the attack is finished).
+    0x40000 = ContactsClones
 }
 
 // All not listed are seemingly never used.
@@ -60,28 +67,32 @@ enum AttackTargetClass_Flags {
     0x4000 = OnlyTargetSelf
     0x10000 = OnlyTargetMario
     0x20000 = OnlyTargetTreeOrSwitch
-    0x10'0000 = OnlyTargetPreferredParts (must have parts attribute 0x1/0x2)
-    0x20'0000 = OnlyTargetSelectParts (must have parts attribute 0x1/0x2/0x4)
+    0x10'0000 = OnlyTargetMainOrSecondaryParts (part attr 0x1, 0x2)
+    0x20'0000 = OnlyTargetMainSecondaryOrBombParts (part attr 0x1, 0x2, 0x4)
     0x100'0000 = SingleTarget
-    0x200'0000 = MultipleTarget?
+    0x200'0000 = MultipleTarget
     0x8000'0000 = CannotTargetAnything (returns no valid targets if set)
 }
 
 // All not listed are seemingly never used.
 enum AttackTargetProperty_Flags {
     0x1 = Tattle-like
-    0x2 = ? Used by "dummy no item" and Fuzzy Horde; similar to 0x8?
+    // Seemingly identical to 0x8 in functionality.
+    // Used by dummy "NoItem" and Fuzzy Horde's attacks.
+    0x2 = CannotTargetFloating2
     0x4 = CannotTargetCeiling (used by jumps, Koops' attacks, etc.)
     0x8 = CannotTargetFloating (used by Quake Hammer, Magnus' earthquake, etc.)
     0x10 = CannotTargetGrounded (e.g. Tornado Jump, hits all but grounded)
     0x1000 = Jumplike
     0x2000 = Hammerlike (gulp, bomb, love slap, most grounded enemy attacks, etc.)
-    0x4000 = ShellTosslike (Koops' and mostly shell-like enemies' attacks)
-    0x8000 = ? Possibly unused, code indicates similar to 0x4000
+    0x4000 = ShellTossLike / CannotTargetHigh (Koops' and mostly shell-like enemies' attacks)
+    // Code indicates complementary distribution of targets with 0x4000.
+    0x8000 = CannotTargetLow?
     0x10'0000 = RecoilDamage (prevents self on super/ultra hammer, gulp)
     0x100'0000 = CanOnlyTargetFrontmost
-    0x200'0000 = ? (seemingly unused; referenced in code); Shell Shield counters
-    0x400'0000 = ? (seemingly unused; referenced in code); part attr 0x20'0000 counters
+    0x200'0000 = CannotTargetShellShield
+    // Unused, cannot target part attr 0x200'0000 which is also unused.
+    0x400'0000 = ?
     // Determines whether to swap attacking direction in BattleSamplingEnemy.
     0x1000'0000 = TargetSameAllianceDirection
     0x2000'0000 = TargetOppositeAllianceDirection
@@ -106,41 +117,52 @@ enum AttackTargetWeighting_Flags {
 
 // "Attribute"; e.g. btlevtcmd_OnAttribute
 enum BattleUnitAttribute_Flags {
-    0x1 = ? acts like actor is 300 units farther back, unless part has attr 0x20000
-    0x2 = OutOfReach (generally on ceiling)
-    0x4 = Unquakeable (aerial / hovering)
-    0x8 = ? checked in btlDispMain and BattlePreCheckDamage, invisible-like status?
+    // Acts like actor is 300 units further back, unless part attr 0x20000 is set.
+    0x1 = MapObjLike?
+    0x2 = Ceiling
+    0x4 = Floating (not grounded, regardless of height)
+    0x8 = PermanentlyInvisible
     0x10 = Veiled (w/Vivian)
     0x20 = ShellShielded
-    0x40 = ? if set, makes unit untargetable (per _btlSamplingEnemy)
-    0x100 = ? used at end of BattleCalculateDamage
+    // If set, makes unit untargetable (per _btlSamplingEnemy).
+    0x40 = ShellShieldEnabled?
+    // Called "LimitSwitch" in Switch; used at end of BattleCalculateDamage
+    // but seemingly unreferenced.
+    0x100 = ?
     0x1000 = ? disables zero-gravity floatiness
     0x2000 = ? disables zero-gravity inability to move
-    0x4000 = ? prevents spin hammer knockback?
-    0x10000 = ? has to do with dead actors?
-                checked when HP = 0 in BattleCalculateDamage...
-    0x20000 = inactive?
-    0x40000 = ? has to do with dead actors? checked in BattleCheckConcluded
-    0x80000 = ? checked in battleMakePhaseEvtTable and btlseqPhaseFirstProcess
-    0x20'0000 = ? checked in BattleDamageDirect when processing spin damage_patterns?
-    0x40'0000 = ? checked when drawing damage stars in BattleDamageDirect
-    0x100'0000 = ? has to do with not displaying actors?
-    0x200'0000 = counters (unused?) AttackTargetProperty 0x400'0000?
-    0x400'0000 = ? checked in btlUnitPartsDisp, does something with view angles?
-    0x1000'0000 = ? has to do with dead actors? checked in BattleCheckConcluded
-    0x2000'0000 = ? has to do with not displaying actors?
-    0x4000'0000 = disable damage? Set in unit_lecture_christine::_set_lecture_mode
+    0x4000 = DisableSpinHammerKnockback
+    0x10000 = IsUndead
+    // Used by player characters and Dry Bones when at 0 HP.
+    0x20000 = IsCorpse
+    // Game Over is triggered if all player-allied actors with this flag are KO'd.
+    // Only used on Mario in the original game.
+    0x40000 = IsLeader
+    // Checked in battleMakePhaseEvtTable and btlseqPhaseFirstProcess;
+    // seemingly skips attack + phase events?
+    0x80000 = ?
+    0x20'0000 = DisableLoveSlapSpin
+    0x40'0000 = DisableDamageNumberEffects
+    // Skips displaying all parts of the actor.
+    0x100'0000 = DisplayOff
+    0x200'0000 = HpGaugeOff
+    // Checked in btlUnitPartsDisp, does something with view angles?
+    0x400'0000 = ?
+    // Has to do with dead actors? checked in BattleCheckConcluded
+    0x1000'0000 = ?
+    0x2000'0000 = ShadowDisplayOff
+    0x4000'0000 = DisableDamage
 }
 
 // "Token"; e.g. btlevtcmd_OnToken
 enum BattleUnitToken_Flags {
-    0x1 = ? set on target at end of BattleDamageDirect
+    0x1 = DamageTaken  (Set in BattleDamageDirect)
     0x2 = ? set in BattleAttackDeclare
     0x4 = ? set in BattleAttackDeclare
-    0x8 = set if charge expended?
-    0x10 = set if confuse procs? swaps alliances used for target sampling if set
-    0x1000 = set in active move state?
-    0x2000 = set in "hustle" state (Rally Wink)?
+    0x8 = ChargeExpended
+    0x10 = ConfusionProc  (Used during acts taken in confusion)
+    0x1000 = Acting       (Set during an active move state)
+    0x2000 = HustleActing (Used in Rally Wink state)
     0x8000'0000 = ? unset on all actors after move finished in btlseqMove
 }
 
@@ -148,41 +170,52 @@ enum BattleUnitToken_Flags {
 enum PartsAttribute_Flags {
     // These attributes determine which kinds of attacks can target this part.
     // - Freely-selectable attacks like jump can target anything regardless of
-    //   whether any of 0x1, 0x2, 0x4 are set
+    //   whether any of MainBody, SecondaryBody, BombableBody are set
     // - Forced-selection attacks like Shade Fist or Shell Toss will target
-    //   parts w/ 0x1 set if reachable, then 0x2 parts otherwise
-    // - Bomb Squad targets only parts with at least one of 0x1, 0x2, 0x4 set
-    0x1 = MostPreferredSelectTarget
-    0x2 = PreferredSelectTarget
-    0x4 = SelectTarget
+    //   parts w/ MainBody set if reachable, then SecondaryBody parts otherwise
+    // - Bomb Squad targets all parts with at least one of the three set.
+    0x1 = MainBody
+    0x2 = SecondaryBody
+    0x4 = BombableBody
     
-    0x8 = ? checked in BattleAttackDeclare
-    0x10 = ? causes AttackTargetClass 0x20'0000 to fail
-    0x40 = ? acts like always in front, causes miss after most other initial checks?
+    // Checked in BattleAttackDeclare; set on a ton of parts, including most
+    // (all?) MainBody.
+    0x8 = ?
+    
+    // Disables attacks with OnlyTargetMainSecondaryOrBombParts target class.
+    0x10 = NonBombableBody
+    // Called "Hole" in Switch; acts like always in front, causes miss after
+    // most other initial checks?
+    0x40 = ?
     0x80 = WeakToAttackFxR
-    0x100 = WeakToIcePower
+    0x100 = IsFiery (weak to Ice Power)
+    0x200 = IsIcy (conjectural, based on Switch; not referenced in code?)
+    0x400 = IsElectric (conjectural, based on Switch; not referenced in code?)
     0x800 = IsWinged
     0x1000 = IsShelled
     0x2000 = IsBombFlippable
-    0x4000 = ? causes miss, unless attack special property 0x40000 set?
-               (perhaps set on "fake" actors?)
-    0x8000 = ? checked at btlDispMain after Invisible / Dodgy checks 
-    0x10000 = NeverTargetable (i.e., cosmetic only, presumably)
-    0x20000 = ? if set, ignores the extra offset from unit attr 0x1 being set
-    0x40000 = ? causes AttackTargetClass 0x10'0000/20'0000 to fail?
+    0x4000 = IsClone
+    // Disables 'flattening' of model during Invis, Dodgy effects.
+    0x8000 = DisablePaperAnim
+    0x10000 = NotTargetable
+    // Disables the additional targeting X offset from unit attr 0x1.
+    0x20000 = MapObjScopeOff
+    // Disables attacks with target class 0x10'0000 / 20'0000.
+    0x40000 = BodyScopeCannotTarget
     0x80000 = Untattleable (e.g. Cortez' bone pile, Blooper's arms, tutorial...)
     0x10'0000 = JumplikeCannotTarget (seldom used; e.g. Magnus, Cortez phase 2)
     0x20'0000 = HammerlikeCannotTarget
-    0x40'0000 = ShellTosslikeCannotTarget
-    0x80'0000 = DisableDamage? (set by Grodus' wand and tutorial actors)
-    0x100'0000 = ? has to do with not displaying actors?
-    0x200'0000 = ? counters AttackTargetProperty 0x400'0000
-    0x400'0000 = ? has to do with blur, checked in btlDispMain
-    0x800'0000 = ? checked in btlUnitPartsDisp, ignore size scaling?
-    0x1000'0000 = ? checked in btlUnitPartsDisp, has to do w/offset position?
-    0x2000'0000 = IsImmuneToDamageOrStatus?
-    0x4000'0000 = IsImmuneToOHKO?
-    0x8000'0000 = IsImmuneToStatus?
+    0x40'0000 = ShellTosslikeCannotTarget / HighPosition
+    0x80'0000 = DisableDamage (set by Grodus' wand and tutorial actors)
+    0x100'0000 = DisplayOff
+    // Additionally counters AttackTargetProperty 0x400'0000
+    0x200'0000 = ShadowOff
+    0x400'0000 = BlurOn
+    0x800'0000 = ScaleIndependence
+    0x1000'0000 = Independence
+    0x2000'0000 = IsInvincible (immune to all damage + statuses)
+    0x4000'0000 = IsImmuneToOHKO
+    0x8000'0000 = IsImmuneToStatus
 }
 
 // "PartsCounterAttribute", e.g. btlevtcmd_CheckPartsCounterAttribute
@@ -919,7 +952,7 @@ enum StatusEffectType {
     24 = FPRegen
     25 = Fright
     26 = GaleForce
-    27 = OHKO
+    27 = OHKO  // Used more generally for 'Dead'
 }
 
 enum WeaponElementType {
@@ -1216,19 +1249,19 @@ struct BattleWeapon {
     // 0x04 - Related to failed Gulp?
     // 0x05 - Knocked onto ground (used w/Gulp)
     // 0x06 - Knocked into next target (used w/Gulp)
-    // 0x08 - Used for shell attacks, unknown use
+    // 0x08 - Used by shell attacks; causes Pokeys to lose a segment.
     // 0x0a - Squashed (e.g. Crump bomb)
     // 0x0b - Squashed longer? (e.g. Dragon stomp)
     // 0x0c - Squashed longer still (e.g. Magnus stomp)
     // 0x0d - Inked
     // 0x0e - Knocked backward (Super Hammer)
     // 0x10 - Knocked backward (Ultra Hammer)
-    // 0x13 - Bigger particle effect? (used with "Ultra Hammer finisher"? too heavy to launch, maybe?)
+    // 0x13 - Bigger particle effect? (used with "Ultra Hammer finisher")
     // 0x14 - Confusion effect (used w/Kiss Thief)
     // 0x15, 0x16 - Spin once (used w/Love Slap)
     // 0x17, 0x18 - Quickly spin (used w/Love Slap)
     // 0x19 - Blown away (like Gale Force); only happens if killed
-    // 0x1b - Used by a few miscellaneous attacks, unknown use
+    // 0x1b - Used by attacks that have a no-damage finisher (e.g. Rawk Hawk's prop drop)
     .0x6d = int8 damage_pattern;
     .0x6e = int8 weapon_ac_level;  // Base difficulty; Always 3 by default?
     .0x6f = int8 ?  // Always 2, seemingly unused; perhaps was a "Nice"-esque default reward.
@@ -2657,18 +2690,22 @@ struct GamepadStatus {
 // Very scant documentation / intermediate structures...
 
 // param5 for BattleCheckDamage / BattlePreCheckDamage, etc.
-enum BattleWeaponUnknownParam_Flags {
-    0x17, 0x18, 0x19, 0x1a, 0x1b = related to elements 0, 1, 2, 3, 4?
-    0x100 = ?  // seems to be set for pretty much all attacks
-    0x20000 = nullifiable by AoN?
-    0x40000 = guarded?
-    0x80000 = superguarded?
-    0x10'0000 = bypass evasion / accuracy checks?
+// TODO: Check against Switch values, check for more flags' uses.
+enum DamageCode_Flags {
+    0x17, 0x18, 0x19, 0x1a, 0x1b = hit with elements 0, 1, 2, 3, 4
+    0x100 = LastHit (last hit of a multi-hit; if not set, will not check for KO)
+    0x200 = Fatal
+    0x400 = FatalUndead
+    0x800 = EmergencyRevive
+    0x20000 = AttackACSuccessful (if not set, all or nothing will nullify damage)
+    0x40000 = DefenseACSuccessful (regular guarded)
+    0x80000 = SuperguardACSuccessful
+    0x10'0000 = AlwaysHit
     0x20'0000 = set if 0x1000 or 0x2000 matches parts.status.0x1000 or 0x2000
     0x40'0000 = set if 0x4000, 0x100, and p.sf 0x800
     0x2000'0000 = disables weapon's status?
     0x4000'0000 = apply status regardless of counter?
-    0x8000'0000 = pierce def attr. type 4 (Achilles' heel defense); used on Gulp
+    0x8000'0000 = IronCleftDefenseBreak
 }
 
 struct CounterattackResult {
