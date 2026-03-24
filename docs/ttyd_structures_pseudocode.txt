@@ -981,11 +981,11 @@ struct BattleSetupData {
     // 0x10 = cannot flee
     // 0x20 = if set, makes Merlee curses 45:45:10:0 for ATK:DEF:EXP:Coin 
     //        instead of 30:30:20:20 (seemingly unused?)
-    // 0x40 = enforces Grubba / Jolene conditions?
-    // 0x10'0000 = Unknown; set on dragon battles + epilogue "battle"
-    // 0x1000'0000 = Unknown; set on Pit battles except Bonetail
+    // 0x40 = suppresses Game Over on the field.
+    // 0x10'0000 = skips normal Mario/party entry events (e.g. dragon fights)
+    // 0x1000'0000 = disables First / Bump Attack badges.
     // 0x2000'0000 = Unknown; generally set on boss-ish fights
-    .0x18 = ??? (flags?)
+    .0x18 = flags;
     
     // Determines audience composition on initialization...
     // Usually 0, with the following exceptions:
