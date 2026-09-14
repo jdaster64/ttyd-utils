@@ -214,8 +214,8 @@ enum PartsAttribute_Flags {
     0x800'0000 = ScaleIndependence
     0x1000'0000 = Independence
     0x2000'0000 = IsInvincible (immune to all damage + statuses)
-    0x4000'0000 = IsImmuneToOHKO
-    0x8000'0000 = IsImmuneToStatus
+    0x4000'0000 = IsImmuneToNegativeStatuses
+    0x8000'0000 = IsImmuneToAllStatuses
 }
 
 // "PartsCounterAttribute", e.g. btlevtcmd_CheckPartsCounterAttribute
